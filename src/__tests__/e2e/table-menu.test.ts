@@ -170,3 +170,41 @@ extendTest('table width switch should work', async ({ page }) => {
   await page.locator('.table-up-menu.is-contextmenu .table-up-menu__item').filter({ hasText: 'Switch table width' }).first().click();
   expect(await page.locator('#editor1 .ql-editor .ql-table col:not([data-full])').count()).toBe(4);
 });
+
+test.describe('contextmenu behavior', () => {
+  extendTest('should show custom menu when cell is selected', async ({ page }) => {
+    await createTableBySelect(page, 'container1', 3, 3);
+
+    const cell = page.locator('#editor1 .ql-editor .ql-table td').nth(0);
+    await cell.click();
+    await expect(page.locator('#container1 .table-up-toolbox .table-up-selection .table-up-selection__line')).toBeVisible();
+
+    await cell.click({ button: 'right' });
+    await expect(page.locator('.table-up-menu.is-contextmenu')).toBeVisible();
+  });
+
+  extendTest('should not show custom menu when right-click on table without selection', async ({ page }) => {
+    await createTableBySelect(page, 'container1', 3, 3);
+
+    const cell = page.locator('#editor1 .ql-editor .ql-table td').nth(0);
+
+    // Deselect by clicking elsewhere
+    await page.locator('#editor1 .ql-editor > p').first().click();
+    await expect(page.locator('#container1 .table-up-toolbox .table-up-selection .table-up-selection__line')).not.toBeVisible();
+
+    // Right-click on table without selection
+    await cell.click({ button: 'right' });
+    await expect(page.locator('.table-up-menu.is-contextmenu')).not.toBeVisible();
+  });
+
+  extendTest('should not show custom menu when right-click outside table', async ({ page }) => {
+    await createTableBySelect(page, 'container1', 3, 3);
+
+    const editorParagraph = page.locator('#editor1 .ql-editor > p').first();
+    await editorParagraph.click();
+
+    const paragraphBox = (await editorParagraph.boundingBox())!;
+    await page.mouse.click(paragraphBox.x + 10, paragraphBox.y + 10, { button: 'right' });
+    await expect(page.locator('.table-up-menu.is-contextmenu')).not.toBeVisible();
+  });
+});

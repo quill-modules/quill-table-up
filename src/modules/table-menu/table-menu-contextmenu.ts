@@ -27,8 +27,6 @@ export class TableMenuContextmenu extends TableMenuCommon {
   };
 
   listenContextmenu = (e: MouseEvent) => {
-    e.preventDefault();
-
     const path = e.composedPath() as HTMLElement[];
     if (!path || path.length <= 0) return;
 
@@ -36,6 +34,7 @@ export class TableMenuContextmenu extends TableMenuCommon {
 
     const tableSelection = this.tableModule.getModule<TableSelection>(tableUpInternal.tableSelectionName);
     if (tableNode && tableSelection?.selectedTds?.length) {
+      e.preventDefault();
       if (!this.menu) {
         this.menu = this.buildTools();
       }
