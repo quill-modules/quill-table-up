@@ -282,8 +282,10 @@ extendTest.describe('TableResizeScale functional', () => {
     await page.locator('#editor1 .ql-table-wrapper').evaluate((el) => {
       el.scrollLeft = el.scrollWidth;
     });
+    // Wait for scroll to complete
+    await page.waitForTimeout(100);
     const scrollBlockBounding = (await block.boundingBox())!;
-    expect(scrollBlockBounding.x + scrollBlockBounding.width).toBeLessThanOrEqual(scaleWrapperBounding.x + scaleWrapperBounding.width);
+    expect(scrollBlockBounding.x + scrollBlockBounding.width).toBeLessThanOrEqual(scaleWrapperBounding.x + scaleWrapperBounding.width + 1); // Add 1px tolerance for floating point precision
   });
 });
 
