@@ -1,7 +1,14 @@
 import type Quill from 'quill';
 import type { TableUp } from '../table-up';
 
-export class TableDomSelector {
+export interface TableModuleLifecycle {
+  hide: () => void;
+  show: () => void;
+  update: () => void;
+  destroy: () => void;
+}
+
+export class TableDomSelector implements TableModuleLifecycle {
   table?: HTMLTableElement;
 
   constructor(public tableModule: TableUp, public quill: Quill) {
@@ -30,4 +37,9 @@ export class TableDomSelector {
   show() {}
 
   update() {}
+
+  destroy() {
+    this.hide();
+    this.table = undefined;
+  }
 }

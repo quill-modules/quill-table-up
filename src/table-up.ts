@@ -281,6 +281,7 @@ export class TableUp {
   fixTableByLisenter = debounce(this.balanceTables, 100);
   selector?: HTMLElement;
   resizeOb!: ResizeObserver;
+  editableObserver!: MutationObserver;
   modules: Record<string, Constructor> = {};
 
   get statics(): any {
@@ -328,6 +329,7 @@ export class TableUp {
     }
 
     this.initModules();
+    this.listenEditableChange();
     this.quillHack();
     this.listenBalanceCells();
   }
@@ -410,6 +412,44 @@ export class TableUp {
     for (const item of this.options.modules) {
       this.modules[item.module.moduleName] = new item.module(this, this.quill, item.options);
     }
+  }
+
+  listenEditableChange() {
+    // listen editable change
+    this.editableObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'contenteditable') {
+          const isEditable = this.quill.root.getAttribute('contenteditable') !== 'false';
+          if (!isEditable) {
+            this.destroyModules();
+          }
+          else {
+            this.initModules();
+          }
+          break;
+        }
+      }
+    });
+
+    this.editableObserver.observe(this.quill.root, {
+      attributes: true,
+      attributeFilter: ['contenteditable'],
+    });
+  }
+
+  destroyModules() {
+    for (const [moduleName, module] of Object.entries(this.modules)) {
+      // 调用模块的 destroy 方法(如果存在)
+      if (module && typeof (module as any).destroy === 'function') {
+        try {
+          (module as any).destroy();
+        }
+        catch (error) {
+          console.warn(`Failed to destroy module ${moduleName}:`, error);
+        }
+      }
+    }
+    this.modules = {};
   }
 
   getModule<T>(name: string) {
