@@ -12,3 +12,6 @@ docs/*umd.js.map
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+.claude
+.cursor

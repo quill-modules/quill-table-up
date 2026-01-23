@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import http from 'node:http';
 import { extname, join } from 'node:path';
+import open from 'open';
 import { projectRoot } from './constants';
 
 const hostname = '127.0.0.1';
@@ -36,6 +37,10 @@ export function startServer() {
 
   server.listen(PORT, hostname, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
+    open(`http://localhost:${PORT}/docs/index.html`)
+      .catch((error) => {
+        console.error('Failed to open browser:', error);
+      });
   });
 
   return server;
