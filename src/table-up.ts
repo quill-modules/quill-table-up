@@ -407,6 +407,10 @@ export class TableUp {
   }
 
   initModules() {
+    // should not initModules in read-only mode
+    if (!this.quill.isEnabled() || this.quill.options.readOnly) {
+      return;
+    }
     for (const item of this.options.modules) {
       this.modules[item.module.moduleName] = new item.module(this, this.quill, item.options);
     }
