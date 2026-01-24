@@ -22,6 +22,7 @@ const baseOptions = {
   ignoreWatch: ['./src/__tests__', './src/style'],
   external: ['quill'],
   noExternal: ['@floating-ui/dom'],
+  inlineOnly: ['@floating-ui/dom'],
   loader: {
     '.svg': 'text',
   } as const,
