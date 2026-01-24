@@ -30,7 +30,7 @@ export class TableMenuContextmenu extends TableMenuCommon {
     const path = e.composedPath() as HTMLElement[];
     if (!path || path.length <= 0) return;
 
-    const tableNode = path.find(node => node.tagName && node.tagName.toUpperCase() === 'TABLE' && node.classList.contains('ql-table'));
+    const tableNode = path.find(node => node.tagName?.toUpperCase() === 'TABLE' && node.classList.contains('ql-table'));
 
     const tableSelection = this.tableModule.getModule<TableSelection>(tableUpInternal.tableSelectionName);
     if (tableNode && tableSelection?.selectedTds?.length) {

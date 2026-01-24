@@ -105,7 +105,7 @@ export class TableCellInnerFormat extends ContainerFormat {
     else {
       super.setFormatValue(name, value);
     }
-    if (this.parent && this.parent.statics.blotName === blotName.tableCell) {
+    if (this.parent?.statics.blotName === blotName.tableCell) {
       this.parent.setFormatValue(name, value);
     }
 

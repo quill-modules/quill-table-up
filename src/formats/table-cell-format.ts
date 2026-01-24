@@ -87,7 +87,7 @@ export class TableCellFormat extends ContainerFormat {
 
   isChildHeadTableCellInner() {
     const headChild = this.children.head;
-    return headChild && headChild.statics.blotName === blotName.tableCellInner;
+    return headChild?.statics.blotName === blotName.tableCellInner;
   }
 
   setFormatValue(name: string, value?: any) {
@@ -122,7 +122,7 @@ export class TableCellFormat extends ContainerFormat {
       (headChild.domNode as HTMLElement).dataset.style = this.domNode.style.cssText;
     }
 
-    if (this.parent && this.parent.statics.blotName === blotName.tableRow) {
+    if (this.parent?.statics.blotName === blotName.tableRow) {
       (this.parent as TableRowFormat).setFormatValue(name, value);
     }
   }

@@ -99,12 +99,12 @@ extendTest('test TableScrollbar should not effect selection', async ({ page, edi
   await page.mouse.move(bound.x + bound.width / 2, bound.y + bound.height / 2);
   await page.mouse.down();
   expect(await page.evaluate(() => {
-    return document.onselectstart && document.onselectstart(new Event('selectstart')) === false;
+    return document.onselectstart?.(new Event('selectstart')) === false;
   })).toBe(true);
 
   await page.mouse.up();
   expect(await page.evaluate(() => {
-    return !document.onselectstart || (document.onselectstart && document.onselectstart(new Event('selectstart')) === true);
+    return !document.onselectstart || (document.onselectstart?.(new Event('selectstart')) === true);
   })).toBe(true);
 });
 

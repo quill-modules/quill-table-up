@@ -296,7 +296,7 @@ export class TableUp {
     const toolbar = this.quill.getModule('toolbar') as TypeToolbar;
     if (toolbar && (this.quill.theme as QuillTheme).pickers) {
       const [, select] = (toolbar.controls as [string, HTMLElement][] || []).find(([name]) => name === this.statics.toolName) || [];
-      if (select && select.tagName.toLocaleLowerCase() === 'select') {
+      if (select?.tagName.toLocaleLowerCase() === 'select') {
         const picker = (this.quill.theme as QuillTheme).pickers.find(picker => picker.select === select);
         if (picker) {
           picker.label.innerHTML = this.options.icon;
@@ -926,7 +926,7 @@ export class TableUp {
           }
           const curTd = tds[indexTd];
           // if colId does not match. insert a new one
-          if (!curTd || curTd.colId !== tableColIds[indexCol]) {
+          if (curTd?.colId !== tableColIds[indexCol]) {
             tr.insertBefore(
               createCell(
                 this.quill.scroll,

@@ -64,7 +64,7 @@ export class TableRowFormat extends ContainerFormat {
       }
     }
     // Not found in current row. Means cell is rowspan. Find in prev or next row.
-    if (this[direction] && this[direction]!.statics.blotName === blotName.tableRow) {
+    if (this[direction]?.statics.blotName === blotName.tableRow) {
       return (this[direction] as TableRowFormat).getCellByColId(colId, direction);
     }
     return null;
