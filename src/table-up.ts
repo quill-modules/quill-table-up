@@ -296,7 +296,7 @@ export class TableUp {
     const toolbar = this.quill.getModule('toolbar') as TypeToolbar;
     if (toolbar && (this.quill.theme as QuillTheme).pickers) {
       const [, select] = (toolbar.controls as [string, HTMLElement][] || []).find(([name]) => name === this.statics.toolName) || [];
-      if (select && select.tagName.toLocaleLowerCase() === 'select') {
+      if (select?.tagName.toLocaleLowerCase() === 'select') {
         const picker = (this.quill.theme as QuillTheme).pickers.find(picker => picker.select === select);
         if (picker) {
           picker.label.innerHTML = this.options.icon;
@@ -409,10 +409,8 @@ export class TableUp {
   }
 
   initModules() {
-    // should not initModules in read-only mode
-    if (!this.quill.isEnabled() || this.quill.options.readOnly) {
-      return;
-    }
+    // should not initModules if editor not editable
+    if (!this.quill.isEnabled()) return;
     for (const item of this.options.modules) {
       this.modules[item.module.moduleName] = new item.module(this, this.quill, item.options);
     }
@@ -926,7 +924,7 @@ export class TableUp {
           }
           const curTd = tds[indexTd];
           // if colId does not match. insert a new one
-          if (!curTd || curTd.colId !== tableColIds[indexCol]) {
+          if (curTd?.colId !== tableColIds[indexCol]) {
             tr.insertBefore(
               createCell(
                 this.quill.scroll,
