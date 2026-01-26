@@ -12,15 +12,15 @@ export class TableDomSelector implements TableModuleLifecycle {
   table?: HTMLTableElement;
 
   constructor(public tableModule: TableUp, public quill: Quill) {
-    this.quill.root.addEventListener('mousedown', this.tableSelectHandler.bind(this));
+    this.quill.root.addEventListener('mousedown', this.tableSelectHandler);
   }
 
-  tableSelectHandler(event: MouseEvent) {
+  tableSelectHandler = (event: MouseEvent) => {
     const path = event.composedPath() as HTMLElement[];
     if (event.button !== 0 || !path || path.length <= 0) return;
     const tableNode = path.find(node => node.tagName && node.tagName.toUpperCase() === 'TABLE');
     this.setSelectionTable(tableNode as HTMLTableElement);
-  }
+  };
 
   setSelectionTable(table: HTMLTableElement | undefined) {
     if (this.table === table) return;
@@ -39,6 +39,7 @@ export class TableDomSelector implements TableModuleLifecycle {
   update() {}
 
   destroy() {
+    this.quill.root.removeEventListener('mousedown', this.tableSelectHandler);
     this.hide();
     this.table = undefined;
   }

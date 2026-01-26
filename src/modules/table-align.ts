@@ -117,6 +117,7 @@ export class TableAlign extends TableDomSelector {
   }
 
   destroy() {
+    super.destroy();
     this.hide();
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();

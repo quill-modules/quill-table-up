@@ -436,7 +436,7 @@ export class TableSelection extends TableDomSelector {
     this.startScrollRecordPosition = [];
   }
 
-  tableSelectHandler(mousedownEvent: MouseEvent) {
+  tableSelectHandler = (mousedownEvent: MouseEvent) => {
     const { button, target, clientX, clientY } = mousedownEvent;
     const closestTable = (target as HTMLElement).closest<HTMLTableElement>('table');
     const closestTableCaption = (target as HTMLElement).closest('caption');
@@ -486,7 +486,7 @@ export class TableSelection extends TableDomSelector {
     const tableWrapper = tableMain.parent!.domNode as HTMLElement;
     this.autoScroller.updateMousePosition(clientX, clientY);
     this.autoScroller.start(tableWrapper);
-  }
+  };
 
   updateWithSelectedTds() {
     if (this.selectedTds.length <= 0) {
@@ -599,6 +599,7 @@ export class TableSelection extends TableDomSelector {
   }
 
   destroy() {
+    super.destroy();
     this.resizeObserver.disconnect();
 
     this.hide();

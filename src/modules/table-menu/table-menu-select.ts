@@ -87,10 +87,12 @@ export class TableMenuSelect extends TableMenuCommon {
     }
   }
 
-  destroy(): void {
+  destroy() {
     super.destroy();
 
     this.quill.off(tableUpEvent.TABLE_SELECTION_DRAG_START, this.tableSelectionDragStart);
     this.quill.off(tableUpEvent.TABLE_SELECTION_DRAG_END, this.tableSelectionDragEnd);
+    this.quill.off(tableUpEvent.TABLE_SELECTION_CHANGE, this.tableSelectioChange);
+    this.quill.off(tableUpEvent.TABLE_SELECTION_DISPLAY_CHANGE, this.tableSelectionDisplayChange);
   }
 }
