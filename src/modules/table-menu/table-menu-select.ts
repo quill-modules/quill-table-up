@@ -44,7 +44,7 @@ export class TableMenuSelect extends TableMenuCommon {
 
   buildTools(): HTMLElement {
     const menu = super.buildTools();
-    this.tableModule.addContainer(menu);
+    this.quill.container.appendChild(menu);
     return menu;
   }
 
