@@ -242,7 +242,8 @@ export class TableResizeLine extends TableResizeCommon {
     this.table.removeEventListener('pointermove', this.pointermoveHandler);
   }
 
-  destroy(): void {
+  destroy() {
+    super.destroy();
     if (this.colResizer) {
       this.colResizer.remove();
       this.colResizer = undefined;

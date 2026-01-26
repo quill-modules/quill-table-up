@@ -703,6 +703,7 @@ export class TableResizeBox extends TableResizeCommon {
   }
 
   destroy() {
+    super.destroy();
     this.hide();
     clearScrollEvent.call(this);
     this.quill.off(Quill.events.EDITOR_CHANGE, this.updateWhenTextChange);

@@ -318,6 +318,7 @@ export class TableMenuCommon extends TableDomSelector {
   }
 
   destroy() {
+    super.destroy();
     this.quill.off(Quill.events.TEXT_CHANGE, this.updateWhenTextChange);
     this.quill.off(tableUpEvent.TABLE_SELECTION_DRAG_START, this.hideWhenSelectionDragStart);
     this.activeTooltip = null;

@@ -279,6 +279,7 @@ export class TableVirtualScrollbar extends TableDomSelector {
   }
 
   destroy() {
+    super.destroy();
     this.hide();
     this.scrollbarContainer.remove();
     this.quill.off(Quill.events.TEXT_CHANGE, this.updateWhenTextChange);

@@ -56,9 +56,11 @@ extendTest.describe('test table tools should hide after table removed', () => {
     editorPage.index = 0;
     await createTableBySelect(page, 'container1', 3, 3);
     await page.locator('#container1 .ql-editor .ql-table td').nth(0).click();
+    await page.locator('#container1 .ql-editor .ql-table td').nth(0).click({ button: 'right' });
     await page.waitForTimeout(1000);
     await expect(page.locator('#container1 .table-up-toolbox .table-up-selection')).toBeVisible();
     await expect(page.locator('#container1 .table-up-toolbox .table-up-align')).toBeAttached();
+    await expect(page.locator('#container1 .table-up-menu')).toBeAttached();
     await expect(page.locator('#container1 .table-up-toolbox .table-up-scrollbar__container')).toBeAttached();
     await expect(page.locator('#container1 .table-up-toolbox .table-up-resize-line__col')).toBeAttached();
     await expect(page.locator('#container1 .table-up-toolbox .table-up-resize-line__row')).toBeAttached();
@@ -67,6 +69,7 @@ extendTest.describe('test table tools should hide after table removed', () => {
     await page.waitForTimeout(1000);
     await expect(page.locator('#container1 .table-up-toolbox .table-up-selection')).not.toBeVisible();
     await expect(page.locator('#container1 .table-up-toolbox .table-up-align')).not.toBeVisible();
+    await expect(page.locator('#container1 .table-up-menu')).not.toBeVisible();
     await expect(page.locator('#container1 .table-up-toolbox .table-up-scrollbar__container')).not.toBeVisible();
     await expect(page.locator('#container1 .table-up-toolbox .table-up-scrollbar__container .table-up-scrollbar.is-vertical')).not.toBeAttached();
     await expect(page.locator('#container1 .table-up-toolbox .table-up-scrollbar__container .table-up-scrollbar.is-horizontal')).not.toBeAttached();
@@ -82,15 +85,15 @@ extendTest.describe('test table tools should hide after table removed', () => {
     await page.waitForTimeout(1000);
     await expect(page.locator('#container2 .table-up-toolbox .table-up-selection')).toBeVisible();
     await expect(page.locator('#container2 .table-up-toolbox .table-up-align')).toBeAttached();
-    await expect(page.locator('#container2 .table-up-toolbox .table-up-menu')).toBeAttached();
+    await expect(page.locator('#container2 .table-up-menu')).toBeAttached();
     await expect(page.locator('#container2 .table-up-toolbox .table-up-scrollbar__container')).toBeAttached();
     await expect(page.locator('#container2 .table-up-toolbox .table-up-resize-box')).toBeAttached();
     await expect(page.locator('#container2 .table-up-toolbox .table-up-scale')).toBeAttached();
     await editorPage.setContents([{ insert: 'replace' }]);
     await page.waitForTimeout(1000);
     await expect(page.locator('#container2 .table-up-toolbox .table-up-selection')).not.toBeVisible();
-    await expect(page.locator('#container2 .table-up-toolbox .table-up-menu')).not.toBeVisible();
     await expect(page.locator('#container2 .table-up-toolbox .table-up-align')).not.toBeVisible();
+    await expect(page.locator('#container2 .table-up-menu')).not.toBeVisible();
     await expect(page.locator('#container2 .table-up-toolbox .table-up-scrollbar__container')).not.toBeVisible();
     await expect(page.locator('#container1 .table-up-toolbox .table-up-scrollbar__container .table-up-scrollbar.is-vertical')).not.toBeAttached();
     await expect(page.locator('#container1 .table-up-toolbox .table-up-scrollbar__container .table-up-scrollbar.is-horizontal')).not.toBeAttached();

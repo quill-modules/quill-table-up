@@ -599,6 +599,7 @@ export class TableSelection extends TableDomSelector {
   }
 
   destroy() {
+    super.destroy();
     this.resizeObserver.disconnect();
 
     this.hide();

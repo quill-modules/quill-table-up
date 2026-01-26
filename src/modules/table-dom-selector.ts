@@ -10,9 +10,11 @@ export interface TableModuleLifecycle {
 
 export class TableDomSelector implements TableModuleLifecycle {
   table?: HTMLTableElement;
+  tableSelectMouseDownHandler: (event: MouseEvent) => void;
 
   constructor(public tableModule: TableUp, public quill: Quill) {
-    this.quill.root.addEventListener('mousedown', this.tableSelectHandler.bind(this));
+    this.tableSelectMouseDownHandler = this.tableSelectHandler.bind(this);
+    this.quill.root.addEventListener('mousedown', this.tableSelectMouseDownHandler);
   }
 
   tableSelectHandler(event: MouseEvent) {
@@ -39,6 +41,7 @@ export class TableDomSelector implements TableModuleLifecycle {
   update() {}
 
   destroy() {
+    this.quill.root.removeEventListener('mousedown', this.tableSelectHandler);
     this.hide();
     this.table = undefined;
   }
