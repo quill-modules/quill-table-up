@@ -1,3 +1,5 @@
+@import './functions.less';
+
 .ql-toolbar {
   .ql-picker:not(.ql-color-picker):not(.ql-icon-picker).ql-table-up {
     width: 28px;
@@ -18,7 +20,7 @@
   .ql {
     &-table {
       display: table;
-      border-collapse: collapse;
+      border-collapse: separate;
       table-layout: fixed;
       width: auto;
       &[data-full] {
@@ -48,17 +50,26 @@
         }
       }
       &-cell {
+        .setCssVar(fixed-width, 0px);
+
         padding: 8px 12px;
         border-color: transparent;
         font-size: 14px;
         outline: none;
         overflow: auto;
+        background: #fff;
         &-inner {
           display: inline-block;
           min-width: 100%;
           word-break: break-word;
           outline: none;
           counter-reset: list-0;
+        }
+        &[data-fixed='left'] {
+          position: sticky;
+          left: .getCssVar(fixed-width) [];
+          z-index: 1;
+          filter: drop-shadow(4px 0 4px rgba(0, 0, 0, 0.15));
         }
       }
       col {

@@ -8,7 +8,7 @@ import Quill from 'quill';
 import { blotName, cssTextToObject, findParentBlot, findParentBlots, toCamelCase } from '../utils';
 import { ContainerFormat } from './container-format';
 import { TableBodyFormat } from './table-body-format';
-import { getValidCellspan, isSameCellValue } from './utils';
+import { fixedValueValidate, getValidCellspan, isSameCellValue } from './utils';
 
 const Block = Quill.import('blots/block') as TypeParchment.BlotConstructor;
 const BlockEmbed = Quill.import('blots/block/embed') as typeof TypeBlockEmbed;
@@ -17,7 +17,7 @@ export class TableCellInnerFormat extends ContainerFormat {
   static blotName = blotName.tableCellInner;
   static tagName = 'div';
   static className = 'ql-table-cell-inner';
-  static allowDataAttrs: Set<string> = new Set(['table-id', 'row-id', 'col-id', 'rowspan', 'colspan', 'empty-row', 'wrap-tag']);
+  static allowDataAttrs: Set<string> = new Set(['table-id', 'row-id', 'col-id', 'rowspan', 'colspan', 'empty-row', 'wrap-tag', 'fixed']);
   static defaultChild: TypeParchment.BlotConstructor = Block;
   declare parent: TableCellFormat;
   // keep `isAllowStyle` and `allowStyle` same with TableCellFormat
@@ -44,6 +44,7 @@ export class TableCellInnerFormat extends ContainerFormat {
       emptyRow,
       tag = 'td',
       wrapTag = 'tbody',
+      fixed,
     } = value;
     const node = super.create() as HTMLElement;
     node.dataset.tableId = tableId;
@@ -58,6 +59,9 @@ export class TableCellInnerFormat extends ContainerFormat {
       emptyRow && (node.dataset.emptyRow = JSON.stringify(emptyRow));
     }
     catch {}
+    if (fixedValueValidate(fixed)) {
+      node.dataset.fixed = fixed;
+    }
     return node;
   }
 
@@ -72,6 +76,7 @@ export class TableCellInnerFormat extends ContainerFormat {
       emptyRow,
       tag = 'td',
       wrapTag = 'tbody',
+      fixed,
     } = domNode.dataset;
     const value: Record<string, any> = {
       tableId: String(tableId),
@@ -82,14 +87,14 @@ export class TableCellInnerFormat extends ContainerFormat {
       tag,
       wrapTag,
     };
-
     style && (value.style = style);
-
     try {
       emptyRow && (value.emptyRow = JSON.parse(emptyRow));
     }
     catch {}
-
+    if (fixedValueValidate(fixed)) {
+      value.fixed = fixed;
+    }
     return value;
   }
 
@@ -181,12 +186,24 @@ export class TableCellInnerFormat extends ContainerFormat {
     }
   }
 
+  get wrapTag() {
+    return this.domNode.dataset.wrapTag as TableBodyTag || 'tbody';
+  }
+
   set wrapTag(value: TableBodyTag) {
     this.setFormatValue('wrap-tag', value);
   }
 
-  get wrapTag() {
-    return this.domNode.dataset.wrapTag as TableBodyTag || 'tbody';
+  get fixed() {
+    const value = this.domNode.dataset.fixed;
+    if (fixedValueValidate(value)) {
+      return value as TableCellValue['fixed'];
+    }
+    return null;
+  }
+
+  set fixed(value: TableCellValue['fixed'] | null) {
+    this.setFormatValue('fixed', fixedValueValidate(value) ? value : null);
   }
 
   getColumnIndex() {

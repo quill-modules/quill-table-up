@@ -50,7 +50,8 @@ const quillOptions = [
         modules: [
           { module: TableVirtualScrollbar },
           { module: TableAlign },
-          { module: TableResizeLine },
+          // { module: TableResizeLine },
+          { module: TableResizeBox },
           {
             module: TableResizeScale,
             options: {
@@ -70,6 +71,7 @@ const quillOptions = [
               localstorageKey: 'used-color',
               tipText: true,
               tools: [
+                tableMenuTools.FixedColumn,
                 tableMenuTools.InsertCaption,
                 tableMenuTools.InsertTop,
                 tableMenuTools.InsertRight,
@@ -238,11 +240,11 @@ for (const [i, options] of quillOptions.entries()) {
 
 quill[0].setContents([
   { insert: '\n' },
-  { insert: { 'table-up-col': { tableId: '1', colId: '1', width: 80 } } },
-  { insert: { 'table-up-col': { tableId: '1', colId: '2', width: 80 } } },
-  { insert: { 'table-up-col': { tableId: '1', colId: '3', width: 80 } } },
-  { insert: { 'table-up-col': { tableId: '1', colId: '4', width: 80 } } },
-  { insert: { 'table-up-col': { tableId: '1', colId: '5', width: 80 } } },
+  { insert: { 'table-up-col': { tableId: '1', colId: '1', width: 280 } } },
+  { insert: { 'table-up-col': { tableId: '1', colId: '2', width: 280 } } },
+  { insert: { 'table-up-col': { tableId: '1', colId: '3', width: 280 } } },
+  { insert: { 'table-up-col': { tableId: '1', colId: '4', width: 280 } } },
+  { insert: { 'table-up-col': { tableId: '1', colId: '5', width: 280 } } },
   { insert: '1' },
   { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
   { insert: '2' },

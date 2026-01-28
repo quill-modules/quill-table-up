@@ -92,6 +92,7 @@ export interface TableCellValue {
   emptyRow?: string[];
   tag?: 'td' | 'th';
   wrapTag?: TableBodyTag;
+  fixed?: 'left' | 'right';
 }
 export interface TableRowValue {
   tableId: string;

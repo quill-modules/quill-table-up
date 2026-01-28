@@ -5,14 +5,14 @@ import { ContainerFormat } from './container-format';
 import { TableBodyFormat } from './table-body-format';
 import { TableCellInnerFormat } from './table-cell-inner-format';
 import { TableRowFormat } from './table-row-format';
-import { getValidCellspan } from './utils';
+import { fixedValueValidate, getValidCellspan } from './utils';
 
 export class TableCellFormat extends ContainerFormat {
   static blotName = blotName.tableCell;
   static tagName = 'td';
   static className = 'ql-table-cell';
   static allowAttrs = new Set(['rowspan', 'colspan']);
-  static allowDataAttrs = new Set(['table-id', 'row-id', 'col-id', 'empty-row', 'wrap-tag']);
+  static allowDataAttrs = new Set(['table-id', 'row-id', 'col-id', 'empty-row', 'wrap-tag', 'fixed']);
 
   // keep `isAllowStyle` and `allowStyle` same with TableCellInnerFormat
   static allowStyle = new Set(['background-color', 'border', 'height']);
@@ -38,6 +38,7 @@ export class TableCellFormat extends ContainerFormat {
       emptyRow,
       tag = 'td',
       wrapTag = 'tbody',
+      fixed,
     } = value;
     const node = document.createElement(tag);
     node.classList.add(...ensureArray(this.className));
@@ -52,11 +53,21 @@ export class TableCellFormat extends ContainerFormat {
       emptyRow && (node.dataset.emptyRow = JSON.stringify(emptyRow));
     }
     catch {}
+    if (fixedValueValidate(fixed)) {
+      node.dataset.fixed = fixed;
+    }
     return node;
   }
 
   static formats(domNode: HTMLElement) {
-    const { tableId, rowId, colId, emptyRow, wrapTag = 'tbody' } = domNode.dataset;
+    const {
+      tableId,
+      rowId,
+      colId,
+      emptyRow,
+      wrapTag = 'tbody',
+      fixed,
+    } = domNode.dataset;
     const rowspan = Number(domNode.getAttribute('rowspan'));
     const colspan = Number(domNode.getAttribute('colspan'));
     const value: Record<string, any> = {
@@ -76,12 +87,13 @@ export class TableCellFormat extends ContainerFormat {
     if (entries.length > 0) {
       value.style = entries.map(([key, value]) => `${key}: ${value}`).join(';');
     }
-
     try {
       emptyRow && (value.emptyRow = JSON.parse(emptyRow));
     }
     catch {}
-
+    if (fixedValueValidate(fixed)) {
+      value.fixed = fixed;
+    }
     return value;
   }
 
@@ -234,6 +246,14 @@ export class TableCellFormat extends ContainerFormat {
 
   get wrapTag() {
     return this.domNode.dataset.wrapTag as TableBodyTag || 'tbody';
+  }
+
+  get fixed() {
+    const value = this.domNode.dataset.fixed;
+    if (fixedValueValidate(value)) {
+      return value as TableCellValue['fixed'];
+    }
+    return null;
   }
 
   getColumnIndex() {

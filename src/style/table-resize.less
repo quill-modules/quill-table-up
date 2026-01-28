@@ -194,14 +194,14 @@
   }
 }
 
-.table-up {
+.@{namespace} {
   &-drag {
     position: absolute;
     overflow: hidden;
     pointer-events: none;
     &__line {
       position: absolute;
-      z-index: 0;
+      z-index: 1;
       background-color: #409eff;
       &.is-col {
         width: 2px;
@@ -219,7 +219,7 @@
       position: absolute;
       background-color: #04f2;
       pointer-events: none;
-      z-index: 0;
+      z-index: 1;
     }
     &__indicator {
       position: absolute;
@@ -227,7 +227,7 @@
       height: 0px;
       border: 1px solid rgba(63, 133, 255, 1);
       cursor: col-resize;
-      z-index: 0;
+      z-index: 1;
       opacity: 0;
       transition: opacity 0.2s ease-in;
       pointer-events: none;

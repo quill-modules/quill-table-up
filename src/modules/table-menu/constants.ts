@@ -8,6 +8,7 @@ import Border from '../../svg/border.svg';
 import ConvertCell from '../../svg/convert-cell.svg';
 import Copy from '../../svg/copy.svg';
 import Cut from '../../svg/cut.svg';
+import FillColumn from '../../svg/fill-column.svg';
 import InsertBottom from '../../svg/insert-bottom.svg';
 import InsertLeft from '../../svg/insert-left.svg';
 import InsertRight from '../../svg/insert-right.svg';
@@ -207,6 +208,53 @@ export const tableMenuTools: Record<string, Tool> = {
       if (!tableMainBlot) return;
 
       tableModule.convertTableBodyByCells(tableMainBlot, selectedTds, 'tfoot');
+    },
+  },
+  FixedColumn: {
+    name: 'FixedColumn',
+    icon: FillColumn,
+    tip: 'Fixed column',
+    handle(tableModule, selectedTds) {
+      if (!this.table) return;
+      const tableMainBlot = Quill.find(this.table) as TableMainFormat;
+      if (!tableMainBlot) return;
+      const rows = tableMainBlot.getRows();
+      const colIds = tableMainBlot.getColIds();
+      // get all colIds that selected td
+      // TODO 只处理选中的行
+      const getSelectedColIds = selectedTds.reduce((s, td) => s.add(td.colId), new Set<string>());
+      const fixedColIds = rows.reduce((s, row) => {
+        for (const id of getSelectedColIds) {
+          const cell = row.getCellByColId(id, 'prev');
+          if (cell) {
+            const colId = cell.colId;
+            const index = colIds.indexOf(colId);
+            if (index !== -1) {
+              for (let i = 0; i < cell.colspan; i++) {
+                s.add(colIds[index + i]);
+              }
+            }
+          }
+        }
+        return s;
+      }, new Set<string>());
+      // get all fixed cells
+      const fixedCells = rows.map((r) => {
+        const cells = new Set<TableCellInnerFormat>();
+        for (const id of fixedColIds) {
+          const cell = r.getCellByColId(id, 'prev');
+          const cellInnerBlot = cell?.getCellInner();
+          if (cellInnerBlot) {
+            cells.add(cellInnerBlot);
+          }
+        }
+        return Array.from(cells);
+      });
+      for (const cells of fixedCells) {
+        for (const cell of cells) {
+          cell.fixed = 'left';
+        }
+      }
     },
   },
 };
