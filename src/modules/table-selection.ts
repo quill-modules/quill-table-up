@@ -67,7 +67,7 @@ export class TableSelection extends TableDomSelector {
     this.resizeObserver.observe(this.quill.root);
 
     document.addEventListener('paste', this.handlePaste);
-    this.quill.emitter.listenDOM('selectionchange', document, this.selectionChangeHandler.bind(this));
+    document.addEventListener('selectionchange', this.selectionChangeHandler);
     this.quill.on(tableUpEvent.AFTER_TABLE_RESIZE, this.updateAfterEvent);
     this.quill.on(Quill.events.SELECTION_CHANGE, this.quillSelectionChangeHandler);
     this.quill.on(Quill.events.EDITOR_CHANGE, this.updateWhenTextChange);
@@ -243,7 +243,7 @@ export class TableSelection extends TableDomSelector {
     } as TableSelectionOptions, options);
   }
 
-  selectionChangeHandler() {
+  selectionChangeHandler = () => {
     const selection = window.getSelection();
     if (!selection) return;
     const { anchorNode, focusNode, anchorOffset, focusOffset } = selection;
@@ -317,7 +317,7 @@ export class TableSelection extends TableDomSelector {
       focusNode,
       focusOffset,
     };
-  }
+  };
 
   helpLinesInitial() {
     this.cellSelectWrap.style.setProperty('--select-color', this.options.selectColor);
@@ -607,6 +607,7 @@ export class TableSelection extends TableDomSelector {
     clearScrollEvent.call(this);
 
     document.removeEventListener('paste', this.handlePaste);
+    document.removeEventListener('selectionchange', this.selectionChangeHandler);
     this.quill.off(tableUpEvent.AFTER_TABLE_RESIZE, this.updateAfterEvent);
     this.quill.off(Quill.events.EDITOR_CHANGE, this.updateWhenTextChange);
     this.quill.off(Quill.events.SELECTION_CHANGE, this.quillSelectionChangeHandler);

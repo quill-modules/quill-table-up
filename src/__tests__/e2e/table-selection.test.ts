@@ -425,6 +425,54 @@ extendTest('TableSelection should not update when input composition', async ({ p
   expect(composingBounding).toEqual(bounding);
 });
 
+extendTest('TableSelection should allow text selection when editor is not editable', async ({ page, editorPage }) => {
+  editorPage.index = 0;
+  await editorPage.setContents([
+    { insert: '\n' },
+    { insert: { 'table-up-col': { tableId: '1', colId: '1', full: false, width: 150 } } },
+    { insert: { 'table-up-col': { tableId: '1', colId: '2', full: false, width: 150 } } },
+    { insert: 'Hello World' },
+    { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+    { insert: 'Test Content' },
+    { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+    { insert: '\n' },
+  ]);
+  await page.waitForTimeout(500);
+
+  // Disable editor (set contenteditable to false)
+  await editorPage.enable(false);
+  await page.waitForTimeout(100);
+
+  // Verify editor is not editable
+  const isEditable = await page.locator('#editor1 .ql-editor').getAttribute('contenteditable');
+  expect(isEditable).toBe('false');
+
+  // Get two cells with text content
+  const cell0 = page.locator('#editor1 .ql-editor td').nth(0);
+  const cell1 = page.locator('#editor1 .ql-editor td').nth(1);
+  const cell0Bounding = (await cell0.boundingBox())!;
+  const cell1Bounding = (await cell1.boundingBox())!;
+  expect(cell0Bounding).not.toBeNull();
+  expect(cell1Bounding).not.toBeNull();
+
+  // Perform text selection by dragging from first cell to second cell
+  await page.mouse.move(cell0Bounding.x + 5, cell0Bounding.y + cell0Bounding.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(cell1Bounding.x + 5, cell1Bounding.y + cell1Bounding.height * 2);
+  await page.mouse.up();
+
+  // Verify that text can be selected across cells (native selection should work)
+  const selectedText = await page.evaluate(() => {
+    const selection = window.getSelection();
+    return selection?.toString() || '';
+  });
+
+  // Should be able to select text content across multiple cells in non-editable mode
+  expect(selectedText.length).toBeGreaterThan(0);
+  expect(selectedText).toContain('Hello');
+  expect(selectedText).toContain('Test');
+});
+
 extendTest.describe('TableSelection should work correct when wrapper scroll', () => {
   extendTest('TableSelection in quill root scroll', async ({ page, editorPage }) => {
     editorPage.index = 0;
