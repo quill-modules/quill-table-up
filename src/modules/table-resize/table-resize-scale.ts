@@ -149,7 +149,7 @@ export class TableResizeScale extends TableDomSelector {
   destroy() {
     super.destroy();
     this.hide();
-    this.quill.off(Quill.events.TEXT_CHANGE, this.updateWhenTextChange);
+    this.quill.off(Quill.events.EDITOR_CHANGE, this.updateWhenTextChange);
     this.resizeobserver.disconnect();
   }
 }
