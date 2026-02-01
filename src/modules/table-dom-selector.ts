@@ -41,7 +41,7 @@ export class TableDomSelector implements TableModuleLifecycle {
   update() {}
 
   destroy() {
-    this.quill.root.removeEventListener('mousedown', this.tableSelectHandler);
+    this.quill.root.removeEventListener('mousedown', this.tableSelectMouseDownHandler);
     this.hide();
     this.table = undefined;
   }
