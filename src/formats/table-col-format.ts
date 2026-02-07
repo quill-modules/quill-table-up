@@ -16,7 +16,7 @@ export class TableColFormat extends BlockEmbed {
       widthNumber = tableUpSize[full ? 'colMinWidthPre' : 'colMinWidthPx'];
     }
     if (full) {
-      widthNumber = Number.parseFloat(widthNumber.toFixed(3));
+      widthNumber = Math.trunc(widthNumber * 1000) / 1000;
     }
     return `${widthNumber}${full ? '%' : 'px'}`;
   }
