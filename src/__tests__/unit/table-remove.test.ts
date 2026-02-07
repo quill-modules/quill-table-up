@@ -25,7 +25,7 @@ describe('remove column from table', () => {
         <div>
           <table cellpadding="0" cellspacing="0" data-full="true">
             <colgroup data-full="true">
-              <col width="${1 / 3 * 100 * 3}%" data-full="true" />
+              <col width="99.9999%" data-full="true" />
             </colgroup>
             <tbody>
               ${
@@ -144,7 +144,7 @@ describe('remove row from table', () => {
         <div>
           <table cellpadding="0" cellspacing="0" data-full="true">
             <colgroup data-full="true">
-              ${new Array(3).fill(0).map(() => `<col width="${1 / 3 * 100}%" data-full="true" />`).join('\n')}
+              ${new Array(3).fill(0).map(() => `<col width="33.3333%" data-full="true" />`).join('\n')}
             </colgroup>
             <tbody>
               <tr>
@@ -175,7 +175,7 @@ describe('remove row from table', () => {
         <div>
           <table cellpadding="0" cellspacing="0" data-full="true">
             <colgroup data-full="true">
-              ${new Array(3).fill(0).map(() => `<col width="${1 / 3 * 100}%" data-full="true" />`).join('\n')}
+              ${new Array(3).fill(0).map(() => `<col width="33.3333%" data-full="true" />`).join('\n')}
             </colgroup>
             <tbody>
               <tr>

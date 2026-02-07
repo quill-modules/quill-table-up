@@ -28,7 +28,7 @@ describe('merge and split cell', () => {
         <div>
           <table cellpadding="0" cellspacing="0" data-full="true">
             <colgroup data-full="true">
-              ${new Array(3).fill(0).map(() => `<col width="${1 / 3 * 100}%" data-full="true" />`).join('\n')}
+              ${new Array(3).fill(0).map(() => `<col width="33.3333%" data-full="true" />`).join('\n')}
             </colgroup>
             <tbody>
               <tr>
@@ -113,9 +113,9 @@ describe('merge and split cell', () => {
         <div>
           <table cellpadding="0" cellspacing="0" data-full="true">
             <colgroup data-full="true">
-              ${new Array(4).fill(0).map(() => `<col width="${1 / 7 * 100}%" data-full="true" />`).join('\n')}
-              <col width="${2 / 7 * 100}%" data-full="true" />
-              <col width="${1 / 7 * 100}%" data-full="true" />
+              ${new Array(4).fill(0).map(() => `<col width="14.2857%" data-full="true" />`).join('\n')}
+              <col width="28.5714%" data-full="true" />
+              <col width="14.2857%" data-full="true" />
             </colgroup>
             <tbody>
               <tr>
@@ -178,7 +178,7 @@ describe('merge and split cell', () => {
         <div>
           <table cellpadding="0" cellspacing="0" data-full="true">
             <colgroup data-full="true">
-              ${new Array(3).fill(0).map(() => `<col width="${1 / 3 * 100}%" data-full="true" />`).join('\n')}
+              ${new Array(3).fill(0).map(() => `<col width="33.3333%" data-full="true" />`).join('\n')}
             </colgroup>
             <tbody>
               <tr>

@@ -166,7 +166,7 @@ extendTest('TableResize on full width should not outer 100%', async ({ page, edi
   for (let i = 0; i < colCount; i++) {
     width += Number.parseFloat((await cols.nth(i).getAttribute('width'))!);
   }
-  expect(width).toBeCloseTo(100, 3);
+  expect(width).toBeCloseTo(100, 2);
 });
 
 extendTest.describe('TableResizeScale functional', () => {

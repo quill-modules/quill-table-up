@@ -122,7 +122,7 @@ describe('table undo', () => {
         <div>
           <table cellpadding="0" cellspacing="0" data-full="true">
             <colgroup data-full="true">
-              ${new Array(3).fill(0).map((_, i) => `<col width="${1 / 3 * 100}%" data-col-id="${i + 1}" data-full="true" />`).join('\n')}
+              ${new Array(3).fill(0).map((_, i) => `<col width="33.3333%" data-col-id="${i + 1}" data-full="true" />`).join('\n')}
             </colgroup>
             <tbody>
               <tr data-row-id="1">

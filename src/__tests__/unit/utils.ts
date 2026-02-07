@@ -168,7 +168,7 @@ export function getColWidthStyle(options: Required<Omit<ColOptions, 'align' | 't
   const { full, width, colNum } = options;
   let colWidth = `${width}px`;
   if (full) {
-    colWidth = `${1 / colNum * 100}%`;
+    colWidth = `${Math.trunc(1 / colNum * 100 * 10000) / 10000}%`;
   }
   return `width="${colWidth}"`;
 }
@@ -187,7 +187,7 @@ export function createTableDeltaOps(row: number, col: number, colOptions?: ColOp
     );
   }
   for (const [i, _] of new Array(col).fill(0).entries()) {
-    const value: TableColDeltaValue = { tableId, colId: `${i + 1}`, width: 1 / col * 100, full };
+    const value: TableColDeltaValue = { tableId, colId: `${i + 1}`, width: Math.trunc(1 / col * 100 * 10000) / 10000, full };
     if (!full) {
       value.width = width;
     }
