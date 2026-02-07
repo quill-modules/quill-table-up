@@ -15,6 +15,9 @@ export class TableColFormat extends BlockEmbed {
     if (Number.isNaN(widthNumber)) {
       widthNumber = tableUpSize[full ? 'colMinWidthPre' : 'colMinWidthPx'];
     }
+    if (full) {
+      widthNumber = Number.parseFloat(widthNumber.toFixed(3));
+    }
     return `${widthNumber}${full ? '%' : 'px'}`;
   }
 
