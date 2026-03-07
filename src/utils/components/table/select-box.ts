@@ -11,14 +11,14 @@ interface TableSelectOptions {
 }
 export function createSelectBox(options: Partial<TableSelectOptions> = {}) {
   const bem = createBEM('select-box');
-  const selectDom = document.createElement('div');
+  const selectDom = document.createElement('span');
   selectDom.classList.add(bem.b());
 
-  const selectBlock = document.createElement('div');
+  const selectBlock = document.createElement('span');
   selectBlock.classList.add(bem.be('block'));
   for (let r = 0; r < (options.row || 8); r++) {
     for (let c = 0; c < (options.col || 8); c++) {
-      const selectItem = document.createElement('div');
+      const selectItem = document.createElement('span');
       selectItem.classList.add(bem.be('item'));
       selectItem.dataset.row = String(r + 1);
       selectItem.dataset.col = String(c + 1);
@@ -62,7 +62,7 @@ export function createSelectBox(options: Partial<TableSelectOptions> = {}) {
 
   if (options.customBtn) {
     const texts = options.texts || {};
-    const selectCustom = document.createElement('div');
+    const selectCustom = document.createElement('span');
     selectCustom.classList.add(bem.be('custom'));
     selectCustom.textContent = texts.customBtnText || 'Custom';
     selectCustom.addEventListener('click', async () => {

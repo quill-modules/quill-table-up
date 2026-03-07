@@ -655,7 +655,7 @@ export class TableUp {
 
   async buildCustomSelect(customSelect: ((module: TableUp, picker: QuillThemePicker) => HTMLElement | Promise<HTMLElement>) | undefined, picker: QuillThemePicker) {
     if (!customSelect || !isFunction(customSelect)) return;
-    const dom = document.createElement('div');
+    const dom = document.createElement('span');
     dom.classList.add('ql-custom-select');
     this.selector = await customSelect(this, picker);
     dom.appendChild(this.selector);

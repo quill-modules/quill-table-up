@@ -20,14 +20,17 @@
   .setCssVar(select-box-custom-color-bg, transparent);
   .setCssVar(select-box-custom-color-bg-hover, rgb(44, 44, 44));
 
+  display: block;
+
   &__block {
-    display: flex;
+    display: inline-flex;
     width: 160px;
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
   }
   &__item {
+    display: inline-block;
     margin: 2px;
     height: 16px;
     width: 16px;
@@ -39,6 +42,7 @@
     }
   }
   &__custom {
+    display: block;
     padding: 8px;
     color: .getCssVar(select-box-custom-color-text) [];
     background-color: .getCssVar(select-box-custom-color-bg) [];
