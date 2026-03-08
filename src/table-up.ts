@@ -5,7 +5,7 @@ import type { Context } from 'quill/modules/keyboard';
 import type TypeKeyboard from 'quill/modules/keyboard';
 import type TypeToolbar from 'quill/modules/toolbar';
 import type { TableSelection } from './modules';
-import type { Constructor, QuillTheme, QuillThemePicker, TableBodyTag, TableCellValue, TableConstantsData, TableTextOptions, TableUpOptions } from './utils';
+import type { Constructor, QuillTheme, QuillThemePicker, TableBodyTag, TableCellValue, TableConstantsData, TableTextOptions, TableTextOptionsInput, TableUpOptions, TableUpOptionsInput } from './utils';
 import Quill from 'quill';
 import { BlockEmbedOverride, BlockOverride, ContainerFormat, ScrollOverride, TableBodyFormat, TableCaptionFormat, TableCellFormat, TableCellInnerFormat, TableColFormat, TableColgroupFormat, TableFootFormat, TableHeadFormat, TableMainFormat, TableRowFormat, TableWrapperFormat } from './formats';
 import { TableClipboard } from './modules';
@@ -277,6 +277,7 @@ export class TableUp {
 
   quill: Quill;
   options: TableUpOptions;
+  textOptionsInput: TableTextOptionsInput | undefined;
   toolBox: HTMLDivElement;
   fixTableByLisenter = debounce(this.balanceTables, 100);
   selector?: HTMLElement;
@@ -288,33 +289,28 @@ export class TableUp {
     return this.constructor;
   }
 
-  constructor(quill: Quill, options: Partial<TableUpOptions>) {
+  constructor(quill: Quill, options: TableUpOptionsInput) {
     this.quill = quill;
+    this.textOptionsInput = options?.texts;
     this.options = this.resolveOptions(options || {});
     this.toolBox = this.initialContainer();
 
-    const toolbar = this.quill.getModule('toolbar') as TypeToolbar;
-    if (toolbar && (this.quill.theme as QuillTheme).pickers) {
-      const [, select] = (toolbar.controls as [string, HTMLElement][] || []).find(([name]) => name === this.statics.toolName) || [];
-      if (select?.tagName.toLocaleLowerCase() === 'select') {
-        const picker = (this.quill.theme as QuillTheme).pickers.find(picker => picker.select === select);
-        if (picker) {
-          picker.label.innerHTML = this.options.icon;
-          this.buildCustomSelect(this.options.customSelect, picker);
-          picker.label.addEventListener('mousedown', () => {
-            if (!this.selector || !picker) return;
-            const selectRect = this.selector.getBoundingClientRect();
-            const { leftLimited } = limitDomInViewPort(selectRect);
-            if (leftLimited) {
-              const labelRect = picker.label.getBoundingClientRect();
-              Object.assign(picker.options.style, { transform: `translateX(calc(-100% + ${labelRect.width}px))` });
-            }
-            else {
-              Object.assign(picker.options.style, { transform: undefined });
-            }
-          });
+    const picker = this.getToolbarPicker();
+    if (picker) {
+      picker.label.innerHTML = this.options.icon;
+      this.buildCustomSelect(this.options.customSelect, picker);
+      picker.label.addEventListener('mousedown', () => {
+        if (!this.selector) return;
+        const selectRect = this.selector.getBoundingClientRect();
+        const { leftLimited } = limitDomInViewPort(selectRect);
+        if (leftLimited) {
+          const labelRect = picker.label.getBoundingClientRect();
+          Object.assign(picker.options.style, { transform: `translateX(calc(-100% + ${labelRect.width}px))` });
         }
-      }
+        else {
+          Object.assign(picker.options.style, { transform: undefined });
+        }
+      });
     }
 
     const keyboard = this.quill.getModule('keyboard') as TypeKeyboard;
@@ -367,20 +363,29 @@ export class TableUp {
     }
   }
 
-  resolveOptions(options: Partial<TableUpOptions>): TableUpOptions {
+  getToolbarPicker() {
+    const toolbar = this.quill.getModule('toolbar') as TypeToolbar;
+    if (!toolbar || !(this.quill.theme as QuillTheme).pickers) return;
+    const [, select] = (toolbar.controls as [string, HTMLElement][] || []).find(([name]) => name === this.statics.toolName) || [];
+    if (select?.tagName.toLocaleLowerCase() !== 'select') return;
+    return (this.quill.theme as QuillTheme).pickers.find(picker => picker.select === select);
+  }
+
+  resolveOptions(options: TableUpOptionsInput): TableUpOptions {
+    const { texts, ...rest } = options;
     return Object.assign({
       customBtn: false,
-      texts: this.resolveTexts(options.texts || {}),
+      texts: this.resolveTexts(texts),
       full: false,
       fullSwitch: true,
       icon: icons.table,
       autoMergeCell: true,
       modules: [],
-    } as TableUpOptions, options);
+    } as TableUpOptions, rest);
   }
 
-  resolveTexts(options: Partial<TableTextOptions>) {
-    return Object.assign({
+  resolveTexts(options?: TableTextOptionsInput) {
+    const defaults: TableTextOptions = {
       fullCheckboxText: 'Insert full width table',
       customBtnText: 'Custom',
       confirmText: 'Confirm',
@@ -405,7 +410,34 @@ export class TableUp {
       DeleteTable: 'Delete table',
       BackgroundColor: 'Set background color',
       BorderColor: 'Set border color',
-    }, options);
+    };
+    if (isFunction(options)) {
+      const textGetter = options;
+      return new Proxy(defaults, {
+        get(target, key: string | symbol) {
+          if (typeof key !== 'string') return Reflect.get(target, key);
+          const value = textGetter(key);
+          return isString(value) ? value : (target as Record<string, string>)[key];
+        },
+      });
+    }
+    return Object.assign(defaults, options);
+  }
+
+  async refreshUI() {
+    this.options.texts = this.resolveTexts(this.textOptionsInput);
+
+    const picker = this.getToolbarPicker();
+    if (picker) {
+      picker.label.innerHTML = this.options.icon;
+      await this.buildCustomSelect(this.options.customSelect, picker);
+    }
+
+    for (const module of Object.values(this.modules)) {
+      if (module && typeof (module as any).hide === 'function') {
+        (module as any).hide();
+      }
+    }
   }
 
   initModules() {

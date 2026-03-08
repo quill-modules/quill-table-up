@@ -69,7 +69,7 @@ const quill = new Quill('#editor', {
 | ------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------ |
 | full          | if set `true`. width max will be 100%                                                                                       | `boolean`                                                                       | `false`                                    |
 | fullSwitch    | enable to choose insert a full width table                                                                                  | `boolean`                                                                       | `true`                                     |
-| texts         | the text used to create the table                                                                                           | `TableTextOptions`                                                              | `defaultTexts`                             |
+| texts         | the text used to create the table                                                                                           | `TableTextOptions \| ((key: string) => string)`                                 | `defaultTexts`                             |
 | customSelect  | display a custom select to custom row and column number add a table. module provides default selector `defaultCustomSelect` | `(tableModule: TableUp, picker: Picker) => Promise<HTMLElement> \| HTMLElement` | -                                          |
 | customBtn     | display a custom button to custom row and column number add a table. it only when use `defaultCustomSelect` will effect     | `boolean`                                                                       | `false`                                    |
 | icon          | picker svg icon string. it will set with `innerHTML`                                                                        | `string`                                                                        | `origin table icon`                        |
@@ -115,6 +115,48 @@ const defaultTexts = {
 ```
 
 </details>
+
+### `texts` Dynamic Usage
+
+You can pass `texts` as a function.\
+When internal UI reads a text, it will call `texts(key)` and use the returned string.
+
+```ts
+let locale: 'en' | 'zh' = 'en';
+
+const textMap = {
+  en: {
+    customBtnText: 'Custom',
+    confirmText: 'Confirm',
+    cancelText: 'Cancel',
+  },
+  zh: {
+    customBtnText: '自定义',
+    confirmText: '确认',
+    cancelText: '取消',
+  },
+} as const;
+
+const quill = new Quill('#editor', {
+  modules: {
+    [TableUp.moduleName]: {
+      customSelect: defaultCustomSelect,
+      customBtn: true,
+      texts: key => textMap[locale][key as keyof typeof textMap.en] || '',
+      modules: [
+        { module: TableSelection },
+        { module: TableMenuContextmenu },
+      ],
+    },
+  },
+});
+
+// switch language
+locale = 'zh';
+await quill.getModule(TableUp.moduleName).refreshUI();
+```
+
+`refreshUI()` will rebuild table-up UI and read latest text values.
 
 ## Export Internal Module
 
