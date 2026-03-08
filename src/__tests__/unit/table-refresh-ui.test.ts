@@ -32,4 +32,19 @@ describe('TableUp - refreshUI', () => {
     expect(tableModule.options.texts.customBtnText).toBe('自定义');
     expect(tableModule.options.texts.fullCheckboxText).toBe('插入满宽表格');
   });
+
+  it('should bind this to TableUp instance when calling texts function', () => {
+    let boundThis: TableUp | undefined;
+    const quill = createQuillWithTableModule('<p><br></p>', {
+      texts(key) {
+        boundThis = this;
+        if (key === 'customBtnText') return 'Custom';
+        return '';
+      },
+    });
+
+    const tableModule = quill.getModule(TableUp.moduleName) as TableUp;
+    expect(tableModule.options.texts.customBtnText).toBe('Custom');
+    expect(boundThis).toBe(tableModule);
+  });
 });

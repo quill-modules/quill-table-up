@@ -57,7 +57,7 @@ export interface TableTextOptions extends TableCreatorTextOptions, TableMenuText
   transparent: string;
   perWidthInsufficient: string;
 }
-export type TableTextOptionsInput = Partial<TableTextOptions> | ((key: string) => string);
+export type TableTextOptionsInput = Partial<TableTextOptions> | ((this: TableUp, key: string) => string);
 export interface TableUpExtraModule extends Constructor<any, [TableUp, Quill, any]> {
   moduleName: string;
 }

@@ -413,10 +413,11 @@ export class TableUp {
     };
     if (isFunction(options)) {
       const textGetter = options;
+      const tableModule = this;
       return new Proxy(defaults, {
         get(target, key: string | symbol) {
           if (typeof key !== 'string') return Reflect.get(target, key);
-          const value = textGetter(key);
+          const value = textGetter.call(tableModule, key);
           return isString(value) ? value : (target as Record<string, string>)[key];
         },
       });
