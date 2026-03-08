@@ -34,6 +34,72 @@ const toolbarConfig = [
   ['clean'],
 ];
 
+const lastTableUpTexts = {
+  en: {
+    fullCheckboxText: 'Insert full width table',
+    customBtnText: 'Custom',
+    confirmText: 'Confirm',
+    cancelText: 'Cancel',
+    rowText: 'Row',
+    colText: 'Column',
+    notPositiveNumberError: 'Please enter a positive integer',
+    custom: 'Custom',
+    clear: 'Clear',
+    transparent: 'Transparent',
+    perWidthInsufficient: 'The percentage width is insufficient. To complete the operation, the table needs to be converted to a fixed width. Do you want to continue?',
+    CopyCell: 'Copy cell',
+    CutCell: 'Cut cell',
+    InsertTop: 'Insert row above',
+    InsertRight: 'Insert column right',
+    InsertBottom: 'Insert row below',
+    InsertLeft: 'Insert column left',
+    MergeCell: 'Merge Cell',
+    SplitCell: 'Split Cell',
+    DeleteRow: 'Delete Row',
+    DeleteColumn: 'Delete Column',
+    DeleteTable: 'Delete table',
+    BackgroundColor: 'Set background color',
+    BorderColor: 'Set border color',
+    SwitchWidth: 'Switch table width',
+    InsertCaption: 'Insert table caption',
+    ToggleTdBetweenTh: 'Toggle td between th',
+    ConvertTothead: 'Convert to thead',
+    ConvertTotfoot: 'Convert to tfoot',
+  },
+  zh: {
+    fullCheckboxText: '插入满宽表格',
+    customBtnText: '自定义行列数',
+    confirmText: '确认',
+    cancelText: '取消',
+    rowText: '行数',
+    colText: '列数',
+    notPositiveNumberError: '请输入正整数',
+    custom: '自定义',
+    clear: '清除',
+    transparent: '透明',
+    perWidthInsufficient: '百分比宽度不足。若继续操作，需要转为固定宽度，是否继续？',
+    CopyCell: '复制单元格',
+    CutCell: '剪切单元格',
+    InsertTop: '向上插入一行',
+    InsertRight: '向右插入一列',
+    InsertBottom: '向下插入一行',
+    InsertLeft: '向左插入一列',
+    MergeCell: '合并单元格',
+    SplitCell: '拆分单元格',
+    DeleteRow: '删除当前行',
+    DeleteColumn: '删除当前列',
+    DeleteTable: '删除当前表格',
+    BackgroundColor: '设置背景颜色',
+    BorderColor: '设置边框颜色',
+    SwitchWidth: '切换表格宽度',
+    InsertCaption: '插入表格标题',
+    ToggleTdBetweenTh: '切换表头单元格',
+    ConvertTothead: '转换为表头',
+    ConvertTotfoot: '转换为表尾',
+  },
+};
+let lastTableUpLocale = 'en';
+
 const quillOptions = [
   {
     // debug: 'info',
@@ -125,38 +191,7 @@ const quillOptions = [
             },
           },
         ],
-        texts: {
-          fullCheckboxText: '插入满宽度表格',
-          customBtnText: '自定义行列数',
-          confirmText: '确认',
-          cancelText: '取消',
-          rowText: '行数',
-          colText: '列数',
-          notPositiveNumberError: '请输入正整数',
-          custom: '自定义',
-          clear: '清除',
-          transparent: '透明',
-          perWidthInsufficient: '百分比宽度不足, 如需完成操作需要转换表格为固定宽度，是否继续?',
-
-          CopyCell: '复制单元格',
-          CutCell: '剪切单元格',
-          InsertTop: '向上插入一行',
-          InsertRight: '向右插入一列',
-          InsertBottom: '向下插入一行',
-          InsertLeft: '向左插入一列',
-          MergeCell: '合并单元格',
-          SplitCell: '拆分单元格',
-          DeleteRow: '删除当前行',
-          DeleteColumn: '删除当前列',
-          DeleteTable: '删除当前表格',
-          BackgroundColor: '设置背景颜色',
-          BorderColor: '设置边框颜色',
-          SwitchWidth: '切换表格宽度',
-          InsertCaption: '插入表格标题',
-          ToggleTdBetweenTh: '切换表头单元格',
-          ConvertTothead: '转换为表头',
-          ConvertTotfoot: '转换为表尾',
-        },
+        texts: lastTableUpTexts.zh,
       },
     },
   },
@@ -196,6 +231,9 @@ const quillOptions = [
         full: false,
         autoMergeCell: false,
         customSelect: defaultCustomSelect,
+        customBtn: true,
+        fullSwitch: true,
+        texts: key => lastTableUpTexts[lastTableUpLocale][key] || '',
         modules: [
           { module: TableVirtualScrollbar },
           { module: TableAlign },
@@ -235,6 +273,25 @@ for (const [i, options] of quillOptions.entries()) {
   }
   quill.push(quillItem);
 }
+
+async function setLastTableUpLocale(locale) {
+  if (!lastTableUpTexts[locale]) return;
+  lastTableUpLocale = locale;
+  const tableUp = quill[2]?.getModule(TableUp.moduleName);
+  if (tableUp) {
+    await tableUp.refreshUI();
+  }
+}
+window.setLastTableUpLocale = setLastTableUpLocale;
+
+const localeSelect3 = document.getElementById('locale3');
+if (localeSelect3) {
+  localeSelect3.value = lastTableUpLocale;
+  localeSelect3.addEventListener('change', async (e) => {
+    await setLastTableUpLocale(e.target.value);
+  });
+}
+console.log('Use window.setLastTableUpLocale("en" | "zh") to switch texts for the last editor.');
 
 quill[0].setContents([
   { insert: '\n' },
