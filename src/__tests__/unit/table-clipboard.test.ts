@@ -2,6 +2,7 @@ import Quill from 'quill';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TableCellInnerFormat } from '../../formats';
 import { TableUp } from '../../table-up';
+import { parseCSSRules } from '../../utils/style-helper';
 import { createQuillWithTableModule, createTableBodyHTML, createTableCaptionHTML, createTableDeltaOps, createTableHTML, createTaleColHTML, datasetTag, expectDelta, replaceAttrEmptyRow, simulatePasteHTML } from './utils';
 
 const Delta = Quill.import('delta');
@@ -2172,5 +2173,232 @@ describe('test TableUp `getHTMLByCell`', () => {
     for (const col of htmlCols) {
       expect(col.getAttribute('width')).toBe('33%');
     }
+  });
+});
+
+describe('clipboard style block resolution', () => {
+  it('class-based background-color is preserved on table cell', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: '<style>.xl65{background-color:#FFC000}</style><table><tr><td class="xl65">text</td></tr></table>',
+    });
+    const cellOp = delta.ops.find(op => op.attributes?.['table-up-cell-inner']);
+    expect(cellOp).toBeDefined();
+    const style = (cellOp!.attributes!['table-up-cell-inner'] as any).style;
+    expect(style).toContain('background-color');
+    expect(style).toMatch(/#FFC000|rgb\(255, 192, 0\)/i);
+  });
+
+  it('class-based color is preserved as Quill inline format', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: '<style>.xl65{color:red}</style><table><tr><td class="xl65">text</td></tr></table>',
+    });
+    // text and \n may be merged into a single op when attributes match
+    const textOp = delta.ops.find(op => typeof op.insert === 'string' && (op.insert as string).includes('text'));
+    expect(textOp).toBeDefined();
+    expect(textOp!.attributes?.color).toBeTruthy();
+  });
+
+  it('class-based bold is preserved as Quill inline format', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: '<style>.xl65{font-weight:bold}</style><table><tr><td class="xl65">text</td></tr></table>',
+    });
+    // text and \n may be merged into a single op when attributes match
+    const textOp = delta.ops.find(op => typeof op.insert === 'string' && (op.insert as string).includes('text'));
+    expect(textOp).toBeDefined();
+    expect(textOp!.attributes?.bold).toBe(true);
+  });
+
+  it('inline style takes priority over class style', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: '<style>.xl65{background-color:red}</style><table><tr><td class="xl65" style="background-color:blue">text</td></tr></table>',
+    });
+    const cellOp = delta.ops.find(op => op.attributes?.['table-up-cell-inner']);
+    expect(cellOp).toBeDefined();
+    const style = (cellOp!.attributes!['table-up-cell-inner'] as any).style;
+    expect(style).toContain('background-color');
+    expect(style).toMatch(/blue/i);
+    expect(style).not.toMatch(/red/i);
+  });
+
+  it('@-rules are skipped without error', () => {
+    const rules = parseCSSRules('@page{margin:1in} .xl65{background:red}');
+    expect(rules.length).toBe(1);
+    expect(rules[0].selector).toBe('.xl65');
+    expect(rules[0].styles.background).toBe('red');
+  });
+
+  it('multiple style blocks are all processed', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: '<style>.a{background-color:red}</style><style>.b{background-color:blue}</style><table><tr><td class="a">A</td><td class="b">B</td></tr></table>',
+    });
+    const cellOps = delta.ops.filter(op => op.attributes?.['table-up-cell-inner']);
+    expect(cellOps.length).toBeGreaterThanOrEqual(2);
+    expect((cellOps[0].attributes!['table-up-cell-inner'] as any).style).toContain('background-color');
+    expect((cellOps[1].attributes!['table-up-cell-inner'] as any).style).toContain('background-color');
+  });
+
+  it('simple tag selectors (td) are skipped by default', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: '<style>td{background-color:red} .xl65{background-color:blue}</style><table><tr><td class="xl65">text</td></tr></table>',
+    });
+    const cellOp = delta.ops.find(op => op.attributes?.['table-up-cell-inner']);
+    expect(cellOp).toBeDefined();
+    const style = (cellOp!.attributes!['table-up-cell-inner'] as any).style;
+    // class selector applied, tag selector skipped
+    expect(style).toMatch(/blue/i);
+  });
+
+  it('descendant tag selectors (table td) are skipped by default', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: '<style>table td{background-color:red} .xl65{background-color:blue}</style><table><tr><td class="xl65">text</td></tr></table>',
+    });
+    const cellOp = delta.ops.find(op => op.attributes?.['table-up-cell-inner']);
+    expect(cellOp).toBeDefined();
+    const style = (cellOp!.attributes!['table-up-cell-inner'] as any).style;
+    expect(style).toMatch(/blue/i);
+    expect(style).not.toMatch(/red/i);
+  });
+
+  it('child combinator tag selectors (tr > td) are skipped by default', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: '<style>tr > td{background-color:red}</style><table><tr><td>text</td></tr></table>',
+    });
+    const cellOp = delta.ops.find(op => op.attributes?.['table-up-cell-inner']);
+    expect(cellOp).toBeDefined();
+    const style = (cellOp!.attributes!['table-up-cell-inner'] as any).style || '';
+    expect(style).not.toContain('background-color');
+  });
+
+  it('deep combinator tag selectors (table > tbody > tr > td) are skipped by default', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: '<style>table > tbody > tr > td{background-color:red}</style><table><tbody><tr><td>text</td></tr></tbody></table>',
+    });
+    const cellOp = delta.ops.find(op => op.attributes?.['table-up-cell-inner']);
+    expect(cellOp).toBeDefined();
+    const style = (cellOp!.attributes!['table-up-cell-inner'] as any).style || '';
+    expect(style).not.toContain('background-color');
+  });
+
+  it('sibling combinator tag selectors (td + td) are skipped by default', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: '<style>td + td{background-color:red}</style><table><tr><td>a</td><td>b</td></tr></table>',
+    });
+    const cellOps = delta.ops.filter(op => op.attributes?.['table-up-cell-inner']);
+    for (const op of cellOps) {
+      const style = (op.attributes!['table-up-cell-inner'] as any).style || '';
+      expect(style).not.toContain('background-color');
+    }
+  });
+
+  it('tag+class selectors (td.xl65) are NOT skipped', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: '<style>td.xl65{background-color:red}</style><table><tr><td class="xl65">text</td></tr></table>',
+    });
+    const cellOp = delta.ops.find(op => op.attributes?.['table-up-cell-inner']);
+    expect(cellOp).toBeDefined();
+    const style = (cellOp!.attributes!['table-up-cell-inner'] as any).style;
+    expect(style).toContain('background-color');
+  });
+
+  it('tag+id selectors (td#main) are NOT skipped', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: '<style>td#main{background-color:red}</style><table><tr><td id="main">text</td></tr></table>',
+    });
+    const cellOp = delta.ops.find(op => op.attributes?.['table-up-cell-inner']);
+    expect(cellOp).toBeDefined();
+    const style = (cellOp!.attributes!['table-up-cell-inner'] as any).style;
+    expect(style).toContain('background-color');
+  });
+
+  it('tag+attribute selectors (td[data-x]) are NOT skipped', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: '<style>td[data-x]{background-color:red}</style><table><tr><td data-x="1">text</td></tr></table>',
+    });
+    const cellOp = delta.ops.find(op => op.attributes?.['table-up-cell-inner']);
+    expect(cellOp).toBeDefined();
+    const style = (cellOp!.attributes!['table-up-cell-inner'] as any).style;
+    expect(style).toContain('background-color');
+  });
+
+  it('class descendant tag selectors (.cls td) are NOT skipped', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: '<style>.wrap td{background-color:#FFC000}</style><table class="wrap"><tr><td>text</td></tr></table>',
+    });
+    const cellOp = delta.ops.find(op => op.attributes?.['table-up-cell-inner']);
+    expect(cellOp).toBeDefined();
+    const style = (cellOp!.attributes!['table-up-cell-inner'] as any).style;
+    expect(style).toContain('background-color');
+    expect(style).toMatch(/#FFC000|rgb\(255, 192, 0\)/i);
+  });
+
+  it('pseudo selectors (td:first-child) are NOT skipped', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: '<style>td:first-child{background-color:red}</style><table><tr><td>a</td><td>b</td></tr></table>',
+    });
+    const cellOps = delta.ops.filter(op => op.attributes?.['table-up-cell-inner']);
+    // first cell should have background-color, second should not
+    const styles = cellOps.map(op => (op.attributes!['table-up-cell-inner'] as any).style || '');
+    expect(styles.some(s => s.includes('background-color'))).toBe(true);
+    expect(styles.some(s => !s.includes('background-color'))).toBe(true);
+  });
+
+  it('comma-separated mixed selectors skip only the tag-only parts', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: '<style>td, .xl65{background-color:red}</style><table><tr><td class="xl65">text</td></tr></table>',
+    });
+    const cellOp = delta.ops.find(op => op.attributes?.['table-up-cell-inner']);
+    expect(cellOp).toBeDefined();
+    const style = (cellOp!.attributes!['table-up-cell-inner'] as any).style;
+    // ".xl65" part applied (tag "td" part skipped, but .xl65 matches the same element)
+    expect(style).toContain('background-color');
+  });
+
+  it('complex tag selectors are applied when pasteDefaultTagStyle is true', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`, { pasteDefaultTagStyle: true });
+    const delta = quill.clipboard.convert({
+      html: '<style>table td{background-color:red}</style><table><tr><td>text</td></tr></table>',
+    });
+    const cellOp = delta.ops.find(op => op.attributes?.['table-up-cell-inner']);
+    expect(cellOp).toBeDefined();
+    const style = (cellOp!.attributes!['table-up-cell-inner'] as any).style;
+    expect(style).toContain('background-color');
+  });
+
+  it('pasteStyleSheet=false disables style resolution', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`, { pasteStyleSheet: false });
+    const delta = quill.clipboard.convert({
+      html: '<style>.xl65{background-color:#FFC000}</style><table><tr><td class="xl65">text</td></tr></table>',
+    });
+    const cellOp = delta.ops.find(op => op.attributes?.['table-up-cell-inner']);
+    expect(cellOp).toBeDefined();
+    const style = (cellOp!.attributes!['table-up-cell-inner'] as any).style || '';
+    expect(style).not.toContain('background-color');
+  });
+
+  it('pasteDefaultTagStyle=true enables tag selector styles', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`, { pasteDefaultTagStyle: true });
+    const delta = quill.clipboard.convert({
+      html: '<style>td{background-color:#FFC000}</style><table><tr><td>text</td></tr></table>',
+    });
+    const cellOp = delta.ops.find(op => op.attributes?.['table-up-cell-inner']);
+    expect(cellOp).toBeDefined();
+    const style = (cellOp!.attributes!['table-up-cell-inner'] as any).style;
+    expect(style).toContain('background-color');
   });
 });

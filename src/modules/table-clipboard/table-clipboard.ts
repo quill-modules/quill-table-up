@@ -1,10 +1,11 @@
 import type { Parchment as TypeParchment } from 'quill';
 import type { Delta as TypeDelta } from 'quill/core';
 import type TypeClipboard from 'quill/modules/clipboard';
-import type { TableCaptionValue, TableCellValue } from '../../utils';
+import type { TableUp } from '../../table-up';
+import type { TableCaptionValue, TableCellValue, TableUpOptions } from '../../utils';
 import Quill from 'quill';
 import { TableCellFormat, TableColFormat } from '../../formats';
-import { blotName, cssTextToObject, isObject, isString, objectToCssText, randomId, tableUpSize } from '../../utils';
+import { blotName, cssTextToObject, isObject, isString, objectToCssText, randomId, resolveStyleSheetToInline, tableUpInternal, tableUpSize } from '../../utils';
 
 const Delta = Quill.import('delta');
 const Clipboard = Quill.import('modules/clipboard') as typeof TypeClipboard;
@@ -69,6 +70,17 @@ export class TableClipboard extends Clipboard {
     this.addMatcher('caption', this.matchCaption.bind(this));
 
     this.addMatcher(Node.ELEMENT_NODE, this.matchTdAttributor.bind(this));
+  }
+
+  normalizeHTML(doc: Document) {
+    super.normalizeHTML(doc);
+    const tableModule = this.quill.getModule(tableUpInternal.moduleName) as TableUp | undefined;
+    const options: Partial<TableUpOptions> = tableModule?.options ?? {};
+    if (options.pasteStyleSheet !== false) {
+      resolveStyleSheetToInline(doc, {
+        includeDefaultTagStyle: options.pasteDefaultTagStyle,
+      });
+    }
   }
 
   getStyleBackgroundColor(node: Node, delta: TypeDelta) {

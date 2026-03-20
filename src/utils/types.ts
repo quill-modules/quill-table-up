@@ -73,6 +73,8 @@ export interface TableUpOptions {
   texts: TableTextOptions;
   icon: string;
   autoMergeCell: boolean;
+  pasteStyleSheet: boolean;
+  pasteDefaultTagStyle: boolean;
   modules: TableUpModule[];
 }
 export interface TableUpOptionsInput extends Partial<Omit<TableUpOptions, 'texts'>> {
