@@ -2,7 +2,7 @@ import Quill from 'quill';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TableCellInnerFormat } from '../../formats';
 import { TableUp } from '../../table-up';
-import { parseCSSRules } from '../../utils/style-helper';
+import { parseCSSRules } from '../../utils';
 import { createQuillWithTableModule, createTableBodyHTML, createTableCaptionHTML, createTableDeltaOps, createTableHTML, createTaleColHTML, datasetTag, expectDelta, replaceAttrEmptyRow, simulatePasteHTML } from './utils';
 
 const Delta = Quill.import('delta');
