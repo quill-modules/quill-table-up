@@ -233,6 +233,8 @@ const quillOptions = [
         customSelect: defaultCustomSelect,
         customBtn: true,
         fullSwitch: true,
+        pasteStyleSheet: true,
+        pasteDefaultTagStyle: false,
         texts: key => lastTableUpTexts[lastTableUpLocale][key] || '',
         modules: [
           { module: TableVirtualScrollbar },
