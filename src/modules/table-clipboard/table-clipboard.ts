@@ -15,38 +15,90 @@ export interface ClipboardOptions {
   matchers: [Selector, Matcher][];
 }
 
-function getCellWidth(cell: HTMLElement): number {
-  let width = Number.parseFloat(cell.getAttribute('width')!);
-  if (Number.isNaN(width)) {
-    const styleWidth = cell.style.width;
-    width = styleWidth ? Number.parseFloat(styleWidth) : cell.offsetWidth;
-  }
-  return width || tableUpSize.colDefaultWidth;
+type WidthUnit = 'percent' | 'pixel' | 'unknown';
+interface ColWidthMeta {
+  unit: WidthUnit;
+  width: number | null;
 }
-function calculateCols(tableNode: HTMLElement, colNums: number): number[] {
-  const colWidths = new Array(colNums).fill(tableUpSize.colDefaultWidth);
-  // no need consider colspan
-  // word table will have a row at last <!--[if !supportMisalignedColumns]-->
-  // that tr doesn't have colspan and every td have width attribute. but set style "border:none"
-  const rows = Array.from(tableNode.querySelectorAll('tr'));
-  for (const row of rows) {
-    const cells = Array.from(row.querySelectorAll('td'));
-    let index = 0;
-    for (const cell of cells) {
-      const colspan = cell.colSpan || 1;
-      if (index < colNums) {
-        const cellWidth = getCellWidth(cell);
-        for (let i = 0; i < colspan; i++) {
-          colWidths[index + i] = cellWidth / colspan;
-        }
-      }
-      else {
-        break;
-      }
-      index += colspan;
+
+function getWidthUnit(value: string): WidthUnit {
+  const width = value.trim().toLowerCase();
+  if (!width) return 'unknown';
+  if (width.endsWith('%')) return 'percent';
+  return Number.isNaN(Number.parseFloat(width)) ? 'unknown' : 'pixel';
+}
+
+function getRawWidth(el: HTMLElement): string {
+  return el.getAttribute('width') || el.style.width || '';
+}
+
+function getDefaultColWidth(colNums: number, full: boolean): number {
+  return full ? (100 / colNums) : tableUpSize.colDefaultWidth;
+}
+
+function getExpandedColWidthMeta(node: HTMLElement): ColWidthMeta[] {
+  const result: ColWidthMeta[] = [];
+  for (const col of Array.from(node.querySelectorAll('col'))) {
+    let span = Number.parseInt(col.getAttribute('span') || '1', 10);
+    if (Number.isNaN(span) || span <= 0) span = 1;
+    const rawWidth = getRawWidth(col);
+    const width = Number.parseFloat(rawWidth);
+    const meta = {
+      unit: getWidthUnit(rawWidth),
+      width: Number.isNaN(width) ? null : width,
+    } satisfies ColWidthMeta;
+    for (let i = 0; i < span; i++) {
+      result.push(meta);
     }
   }
-  return colWidths;
+  return result;
+}
+
+function inferTableWidth(colWidths: ColWidthMeta[]): number | null {
+  let percentWidth = 0;
+  let pixelWidth = 0;
+  for (const col of colWidths) {
+    if (col.unit === 'percent' && col.width != null) {
+      percentWidth += col.width;
+    }
+    else if (col.unit === 'pixel' && col.width != null) {
+      pixelWidth += col.width;
+    }
+  }
+  // For mixed colgroups without an explicit table width, infer the total table width
+  // from the remaining pixel share after subtracting percentage columns.
+  if (pixelWidth <= 0 || percentWidth >= 100) return null;
+  return pixelWidth / (1 - percentWidth / 100);
+}
+
+function getTableWidth(table: HTMLElement | null, colWidths: ColWidthMeta[]): number | null {
+  if (!table) return inferTableWidth(colWidths);
+  const rawWidth = getRawWidth(table);
+  const parsedWidth = Number.parseFloat(rawWidth);
+  if (rawWidth && getWidthUnit(rawWidth) === 'pixel' && !Number.isNaN(parsedWidth)) {
+    return parsedWidth;
+  }
+  if (table.offsetWidth > 0) return table.offsetWidth;
+  return inferTableWidth(colWidths);
+}
+
+function convertColWidth(
+  width: number | null,
+  unit: WidthUnit,
+  full: boolean,
+  tableWidth: number | null,
+  colNums: number,
+): number {
+  const defaultWidth = getDefaultColWidth(colNums, full);
+  if (width == null || unit === 'unknown') {
+    return defaultWidth;
+  }
+  if (full) {
+    if (unit === 'percent') return width;
+    return tableWidth != null ? width / tableWidth * 100 : defaultWidth;
+  }
+  if (unit === 'pixel') return width;
+  return tableWidth != null ? width / 100 * tableWidth : defaultWidth;
 }
 
 export class TableClipboard extends Clipboard {
@@ -99,6 +151,11 @@ export class TableClipboard extends Clipboard {
     }
   }
 
+  getTargetFull() {
+    const tableModule = this.quill.getModule(tableUpInternal.moduleName) as TableUp | undefined;
+    return !!tableModule?.options.full;
+  }
+
   matchTable(node: Node, delta: TypeDelta) {
     if (delta.ops.length === 0) return delta;
 
@@ -134,16 +191,22 @@ export class TableClipboard extends Clipboard {
       }
     }
 
-    const colWidths = calculateCols(node as HTMLElement, this.colIds.length);
-    const newCols = colWidths.reduce((colOps, width, i) => {
+    // If pasted HTML already has cols, keep the normalized mode decided in `matchColgroup`.
+    // Otherwise fill every missing col with the default width from `tableUp.options.full`.
+    const existingCol = cols.find(c => c?.insert?.[blotName.tableCol]);
+    const isFull = existingCol
+      ? existingCol.insert[blotName.tableCol].full
+      : this.getTargetFull();
+    const defaultWidth = getDefaultColWidth(this.colIds.length, isFull);
+    const newCols = new Array(this.colIds.length).fill(null).reduce((colOps, _, i) => {
       if (!cols[i]) {
         colOps.push({
           insert: {
             [blotName.tableCol]: {
               tableId: this.tableId,
               colId: this.colIds[i],
-              width,
-              full: false,
+              width: defaultWidth,
+              full: isFull,
             },
           },
         });
@@ -232,6 +295,39 @@ export class TableClipboard extends Clipboard {
         ops.push(op);
       }
     }
+
+    if (ops.length > 0) {
+      const colgroup = node as HTMLElement;
+      const colWidths = getExpandedColWidthMeta(colgroup);
+      const hasPercent = colWidths.some(col => col.unit === 'percent');
+      const hasPixel = colWidths.some(col => col.unit === 'pixel');
+      const isMixed = hasPercent && hasPixel;
+      // Pure percent / pure pixel colgroups keep their source mode.
+      // Only mixed units are normalized according to `tableUp.options.full`.
+      const isFull = isMixed
+        ? this.getTargetFull()
+        : hasPercent
+          ? true
+          : hasPixel
+            ? false
+            : this.getTargetFull();
+      // Prefer the pasted table width as the conversion base. If it is missing,
+      // fall back to an inferred width from the mixed col values above.
+      const tableWidth = getTableWidth(colgroup.closest('table'), colWidths);
+
+      for (const [index, op] of ops.entries()) {
+        const colWidth = colWidths[index];
+        op.insert[blotName.tableCol].full = isFull;
+        op.insert[blotName.tableCol].width = convertColWidth(
+          colWidth?.width ?? null,
+          colWidth?.unit ?? 'unknown',
+          isFull,
+          tableWidth,
+          ops.length,
+        );
+      }
+    }
+
     return new Delta(ops);
   }
 

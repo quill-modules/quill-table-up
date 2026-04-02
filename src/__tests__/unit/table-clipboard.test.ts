@@ -1586,6 +1586,342 @@ describe('clipboard column', () => {
       quill.getContents(),
     );
   });
+
+  it('convert col width with option `full: false`', async () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`, { full: false });
+    quill.setContents(
+      quill.clipboard.convert({
+        html: `
+          <table class="ws-table-all" id="customers">
+            <tbody>
+              <tr>
+                <td>content</td>
+                <td>content</td>
+                <td>content</td>
+              </tr>
+            </tbody>
+          </table>
+        `,
+      }),
+    );
+    await vi.runAllTimersAsync();
+
+    expectDelta(
+      new Delta([
+        { insert: '\n' },
+        { insert: { 'table-up-col': { full: false, width: 100 } } },
+        { insert: { 'table-up-col': { full: false, width: 100 } } },
+        { insert: { 'table-up-col': { full: false, width: 100 } } },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: '\n' },
+      ]),
+      quill.getContents(),
+    );
+  });
+
+  it('convert col width with option `full: true`', async () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`, { full: true });
+    quill.setContents(
+      quill.clipboard.convert({
+        html: `
+          <table class="ws-table-all" id="customers">
+            <tbody>
+              <tr>
+                <td>content</td>
+                <td>content</td>
+                <td>content</td>
+              </tr>
+            </tbody>
+          </table>
+        `,
+      }),
+    );
+    await vi.runAllTimersAsync();
+
+    expectDelta(
+      new Delta([
+        { insert: '\n' },
+        { insert: { 'table-up-col': { full: true, width: 33.3333 } } },
+        { insert: { 'table-up-col': { full: true, width: 33.3333 } } },
+        { insert: { 'table-up-col': { full: true, width: 33.3333 } } },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: '\n' },
+      ]),
+      quill.getContents(),
+    );
+  });
+
+  it('convert table without colgroup should ignore td width when option `full: false`', async () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`, { full: false });
+    quill.setContents(
+      quill.clipboard.convert({
+        html: `
+          <table class="ws-table-all" id="customers">
+            <tbody>
+              <tr>
+                <td width="220">content</td>
+                <td width="140">content</td>
+                <td width="180">content</td>
+              </tr>
+            </tbody>
+          </table>
+        `,
+      }),
+    );
+    await vi.runAllTimersAsync();
+
+    expectDelta(
+      new Delta([
+        { insert: '\n' },
+        { insert: { 'table-up-col': { full: false, width: 100 } } },
+        { insert: { 'table-up-col': { full: false, width: 100 } } },
+        { insert: { 'table-up-col': { full: false, width: 100 } } },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: '\n' },
+      ]),
+      quill.getContents(),
+    );
+  });
+
+  it('convert table without colgroup should ignore td width when option `full: true`', async () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`, { full: true });
+    quill.setContents(
+      quill.clipboard.convert({
+        html: `
+          <table class="ws-table-all" id="customers">
+            <tbody>
+              <tr>
+                <td width="220">content</td>
+                <td width="140">content</td>
+                <td width="180">content</td>
+              </tr>
+            </tbody>
+          </table>
+        `,
+      }),
+    );
+    await vi.runAllTimersAsync();
+
+    expectDelta(
+      new Delta([
+        { insert: '\n' },
+        { insert: { 'table-up-col': { full: true, width: 33.3333 } } },
+        { insert: { 'table-up-col': { full: true, width: 33.3333 } } },
+        { insert: { 'table-up-col': { full: true, width: 33.3333 } } },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: '\n' },
+      ]),
+      quill.getContents(),
+    );
+  });
+
+  it('convert col percent width should be `full: true`', async () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`, { full: false });
+    quill.setContents(
+      quill.clipboard.convert({
+        html: `
+          <table class="ws-table-all" id="customers">
+            <colgroup>
+              <col width="25%">
+              <col width="25%">
+              <col width="25%">
+              <col width="25%">
+            </colgroup>
+            <tbody>
+              <tr>
+                <td>content</td>
+                <td>content</td>
+                <td>content</td>
+                <td>content</td>
+              </tr>
+            </tbody>
+          </table>
+        `,
+      }),
+    );
+    await vi.runAllTimersAsync();
+
+    expectDelta(
+      new Delta([
+        { insert: '\n' },
+        { insert: { 'table-up-col': { full: true, width: 25 } } },
+        { insert: { 'table-up-col': { full: true, width: 25 } } },
+        { insert: { 'table-up-col': { full: true, width: 25 } } },
+        { insert: { 'table-up-col': { full: true, width: 25 } } },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: '\n' },
+      ]),
+      quill.getContents(),
+    );
+  });
+
+  it('convert col fixed width should be `full: false`', async () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`, { full: false });
+    quill.setContents(
+      quill.clipboard.convert({
+        html: `
+          <table class="ws-table-all" id="customers">
+            <colgroup>
+              <col width="120px">
+              <col width="120px">
+              <col width="120px">
+              <col width="120px">
+            </colgroup>
+            <tbody>
+              <tr>
+                <td>content</td>
+                <td>content</td>
+                <td>content</td>
+                <td>content</td>
+              </tr>
+            </tbody>
+          </table>
+        `,
+      }),
+    );
+    await vi.runAllTimersAsync();
+
+    expectDelta(
+      new Delta([
+        { insert: '\n' },
+        { insert: { 'table-up-col': { full: false, width: 120 } } },
+        { insert: { 'table-up-col': { full: false, width: 120 } } },
+        { insert: { 'table-up-col': { full: false, width: 120 } } },
+        { insert: { 'table-up-col': { full: false, width: 120 } } },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: '\n' },
+      ]),
+      quill.getContents(),
+    );
+  });
+
+  it('convert mixed col width should follow option `full: false`', async () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`, { full: false });
+    quill.setContents(
+      quill.clipboard.convert({
+        html: `
+          <table class="ws-table-all" id="customers" style="width: 500px;">
+            <colgroup>
+              <col width="100px">
+              <col width="20%">
+              <col width="30%">
+              <col width="150px">
+            </colgroup>
+            <tbody>
+              <tr>
+                <td>content</td>
+                <td>content</td>
+                <td>content</td>
+                <td>content</td>
+              </tr>
+            </tbody>
+          </table>
+        `,
+      }),
+    );
+    await vi.runAllTimersAsync();
+
+    expectDelta(
+      new Delta([
+        { insert: '\n' },
+        { insert: { 'table-up-col': { full: false, width: 100 } } },
+        { insert: { 'table-up-col': { full: false, width: 100 } } },
+        { insert: { 'table-up-col': { full: false, width: 150 } } },
+        { insert: { 'table-up-col': { full: false, width: 150 } } },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: '\n' },
+      ]),
+      quill.getContents(),
+    );
+  });
+
+  it('convert mixed col width should follow option `full: true`', async () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`, { full: true });
+    quill.setContents(
+      quill.clipboard.convert({
+        html: `
+          <table class="ws-table-all" id="customers" style="width: 500px;">
+            <colgroup>
+              <col width="100px">
+              <col width="20%">
+              <col width="30%">
+              <col width="150px">
+            </colgroup>
+            <tbody>
+              <tr>
+                <td>content</td>
+                <td>content</td>
+                <td>content</td>
+                <td>content</td>
+              </tr>
+            </tbody>
+          </table>
+        `,
+      }),
+    );
+    await vi.runAllTimersAsync();
+
+    expectDelta(
+      new Delta([
+        { insert: '\n' },
+        { insert: { 'table-up-col': { full: true, width: 20 } } },
+        { insert: { 'table-up-col': { full: true, width: 20 } } },
+        { insert: { 'table-up-col': { full: true, width: 30 } } },
+        { insert: { 'table-up-col': { full: true, width: 30 } } },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: 'content' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 1, colspan: 1 } }, insert: '\n' },
+        { insert: '\n' },
+      ]),
+      quill.getContents(),
+    );
+  });
 });
 
 describe('clipboard content format', () => {
