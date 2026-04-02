@@ -247,7 +247,7 @@ describe('clipboard cell structure', () => {
   });
 
   it('clipboard convert multiple merged cell 3', async () => {
-    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const quill = createQuillWithTableModule(`<p><br></p>`, { full: false });
     quill.setContents(
       quill.clipboard.convert({
         html: '<table><tbody><tr><td rowspan="3">merge1</td><td colspan="2">merge2</td><td>3</td></tr><tr><td rowspan="2">merge3</td><td>1</td><td>4</td></tr><tr><td>2</td><td>5</td></tr></tbody></table>',
@@ -580,7 +580,7 @@ describe('clipboard cell structure', () => {
   });
 
   it('clipboard convert empty cell should not ignore', async () => {
-    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const quill = createQuillWithTableModule(`<p><br></p>`, { full: false });
     quill.setContents(
       quill.clipboard.convert({
         html: `<table><tbody><tr><th>q</th><th>w</th><th>e</th></tr><tr><th></th><td>2</td><td>3</td></tr><tr><th></th><td>4</td><td>5</td></tr></tbody></table>`,
@@ -745,7 +745,7 @@ describe('clipboard cell structure', () => {
   });
 
   it('convert background on table/tbody/tr/td', async () => {
-    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const quill = createQuillWithTableModule(`<p><br></p>`, { full: false });
     quill.setContents(
       quill.clipboard.convert({
         html: `
@@ -826,7 +826,7 @@ describe('clipboard cell structure', () => {
   });
 
   it('clipboard convert should generate colgroup at correct position', async () => {
-    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const quill = createQuillWithTableModule(`<p><br></p>`, { full: false });
     quill.setContents(
       quill.clipboard.convert({
         html: '<table class="ql-table" data-table-id="0u473v7j5th" cellpadding="0" cellspacing="0"><tbody data-table-id="0u473v7j5th"><tr class="ql-table-row" data-table-id="0u473v7j5th" data-row-id="1de78ie70hj"><td class="ql-table-cell" data-table-id="0u473v7j5th" data-row-id="1de78ie70hj" data-col-id="0025lmzkmn85x" rowspan="1" colspan="1"><div class="ql-table-cell-inner" data-table-id="0u473v7j5th" data-row-id="1de78ie70hj" data-col-id="0025lmzkmn85x" data-rowspan="1" data-colspan="1" contenteditable="true"><p>1</p></div></td><td class="ql-table-cell" data-table-id="0u473v7j5th" data-row-id="1de78ie70hj" data-col-id="g8v4waukxpe" rowspan="1" colspan="1"><div class="ql-table-cell-inner" data-table-id="0u473v7j5th" data-row-id="1de78ie70hj" data-col-id="g8v4waukxpe" data-rowspan="1" data-colspan="1" contenteditable="true"><p>2</p></div></td><td class="ql-table-cell" data-table-id="0u473v7j5th" data-row-id="1de78ie70hj" data-col-id="7ubw564uue5" rowspan="1" colspan="1"><div class="ql-table-cell-inner" data-table-id="0u473v7j5th" data-row-id="1de78ie70hj" data-col-id="7ubw564uue5" data-rowspan="1" data-colspan="1" contenteditable="true"><p>3</p></div></td></tr></tbody><caption class="ql-table-caption" data-table-id="0u473v7j5th" contenteditable="true">title</caption></table>',
@@ -959,7 +959,7 @@ describe('clipboard cell structure', () => {
   });
 
   it('clipboard convert empty multiple tr to `emptyRow`', async () => {
-    const quill = createQuillWithTableModule('<p><br></p>', { autoMergeCell: false });
+    const quill = createQuillWithTableModule('<p><br></p>', { autoMergeCell: false, full: false });
     quill.setContents(
       quill.clipboard.convert({
         html: `<table><tbody><tr><td rowspan="3" colspan="3">1</td></tr><tr></tr><tr></tr><tr><td>2</td><td>3</td><td>4</td></tr></tbody></table>`,
@@ -1118,7 +1118,7 @@ describe('clipboard cell structure', () => {
   });
 
   it('clipboard convert empty tr to `emptyRow` in thead', async () => {
-    const quill = createQuillWithTableModule(`<p><br></p>`, { autoMergeCell: false });
+    const quill = createQuillWithTableModule(`<p><br></p>`, { autoMergeCell: false, full: false });
     quill.setContents(
       quill.clipboard.convert({
         html: `<table><thead><tr><td rowspan="2" colspan="2">1</td></tr><tr></tr></thead><tbody><tr><td>1</td><td>2</td></tr><tr><td>1</td><td>2</td></tr></tbody></table>`,
@@ -1191,106 +1191,8 @@ describe('clipboard cell structure', () => {
     );
   });
 
-  it('clipboard convert col with span attribute', async () => {
-    const quill = createQuillWithTableModule(`<p><br></p>`, { autoMergeCell: false });
-    quill.setContents(
-      quill.clipboard.convert({
-        html: `
-          <body link=blue vlink=purple>
-
-          <table border=0 cellpadding=0 cellspacing=0 width=252 style='border-collapse:
-          collapse;width:188pt'>
-          <!--StartFragment-->
-          <col width=63 span=4 style='width:47pt'>
-          <tr height=19 style='height:14.4pt'>
-            <td colspan=2 rowspan=6 height=114 class=xl65 width=126 style='height:86.4pt;
-            width:94pt'>1</td>
-            <td colspan=2 rowspan=2 class=xl65 width=126 style='width:94pt'>2</td>
-          </tr>
-          <tr height=19 style='height:14.4pt'>
-          </tr>
-          <tr height=19 style='height:14.4pt'>
-            <td colspan=2 rowspan=2 height=38 class=xl65 style='height:28.8pt'>3</td>
-          </tr>
-          <tr height=19 style='height:14.4pt'>
-          </tr>
-          <tr height=19 style='height:14.4pt'>
-            <td colspan=2 rowspan=2 height=38 class=xl65 style='height:28.8pt'>4</td>
-          </tr>
-          <tr height=19 style='height:14.4pt'>
-          </tr>
-          <!--EndFragment-->
-          </table>
-
-          </body>
-        `,
-      }),
-    );
-    await vi.runAllTimersAsync();
-
-    expect(quill.root).toEqualHTML(
-      `
-        <p><br></p>
-        <div>
-          <table cellpadding="0" cellspacing="0">
-            ${createTaleColHTML(4, { full: false, width: 63 })}
-            <tbody>
-              <tr>
-                <td rowspan="6" colspan="2" data-empty-row="length:1">
-                  <div data-empty-row="length:1"><p>1</p></div>
-                </td>
-                <td rowspan="2" colspan="2" data-empty-row="length:1">
-                  <div data-empty-row="length:1"><p>2</p></div>
-                </td>
-              </tr>
-              <tr></tr>
-              <tr>
-                <td rowspan="2" colspan="2" data-empty-row="length:1">
-                  <div data-empty-row="length:1"><p>3</p></div>
-                </td>
-              </tr>
-              <tr></tr>
-              <tr>
-                <td rowspan="2" colspan="2" data-empty-row="length:1">
-                  <div data-empty-row="length:1"><p>4</p></div>
-                </td>
-              </tr>
-              <tr></tr>
-            </tbody>
-          </table>
-        </div>
-        <p><br></p>
-      `,
-      {
-        ignoreAttrs: ['data-wrap-tag', 'data-tag', 'class', 'data-table-id', 'data-row-id', 'data-col-id', 'data-rowspan', 'data-colspan', 'data-style', 'style', 'contenteditable'],
-        replaceAttrs: {
-          'data-empty-row': replaceAttrEmptyRow,
-        },
-      },
-    );
-    expectDelta(
-      new Delta([
-        { insert: '\n' },
-        { insert: { 'table-up-col': { full: false, width: 63 } } },
-        { insert: { 'table-up-col': { full: false, width: 63 } } },
-        { insert: { 'table-up-col': { full: false, width: 63 } } },
-        { insert: { 'table-up-col': { full: false, width: 63 } } },
-        { insert: '1' },
-        { attributes: { 'table-up-cell-inner': { rowspan: 6, colspan: 2 } }, insert: '\n' },
-        { insert: '2' },
-        { attributes: { 'table-up-cell-inner': { rowspan: 2, colspan: 2 } }, insert: '\n' },
-        { insert: '3' },
-        { attributes: { 'table-up-cell-inner': { rowspan: 2, colspan: 2 } }, insert: '\n' },
-        { insert: '4' },
-        { attributes: { 'table-up-cell-inner': { rowspan: 2, colspan: 2 } }, insert: '\n' },
-        { insert: '\n' },
-      ]),
-      quill.getContents(),
-    );
-  });
-
   it('clipboard convert th correctly', async () => {
-    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const quill = createQuillWithTableModule(`<p><br></p>`, { full: false });
     quill.setContents(
       quill.clipboard.convert({
         html: `
@@ -1386,7 +1288,7 @@ describe('clipboard cell structure', () => {
   });
 
   it('convert thead and tfoot correctly', async () => {
-    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const quill = createQuillWithTableModule(`<p><br></p>`, { full: false });
     quill.setContents(
       quill.clipboard.convert({
         html: `
@@ -1510,7 +1412,7 @@ describe('clipboard cell structure', () => {
   });
 
   it('convert thead rowspan to tbody', async () => {
-    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const quill = createQuillWithTableModule(`<p><br></p>`, { full: false });
     quill.setContents(
       quill.clipboard.convert({
         html: `
@@ -1582,6 +1484,106 @@ describe('clipboard cell structure', () => {
         <p><br></p>
       `,
       { ignoreAttrs: ['class', 'data-table-id', 'data-row-id', 'data-col-id', 'data-rowspan', 'data-colspan', 'contenteditable'] },
+    );
+  });
+});
+
+describe('clipboard column', () => {
+  it('clipboard convert col with span attribute', async () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`, { autoMergeCell: false });
+    quill.setContents(
+      quill.clipboard.convert({
+        html: `
+          <body link=blue vlink=purple>
+
+          <table border=0 cellpadding=0 cellspacing=0 width=252 style='border-collapse:
+          collapse;width:188pt'>
+          <!--StartFragment-->
+          <col width=63 span=4 style='width:47pt'>
+          <tr height=19 style='height:14.4pt'>
+            <td colspan=2 rowspan=6 height=114 class=xl65 width=126 style='height:86.4pt;
+            width:94pt'>1</td>
+            <td colspan=2 rowspan=2 class=xl65 width=126 style='width:94pt'>2</td>
+          </tr>
+          <tr height=19 style='height:14.4pt'>
+          </tr>
+          <tr height=19 style='height:14.4pt'>
+            <td colspan=2 rowspan=2 height=38 class=xl65 style='height:28.8pt'>3</td>
+          </tr>
+          <tr height=19 style='height:14.4pt'>
+          </tr>
+          <tr height=19 style='height:14.4pt'>
+            <td colspan=2 rowspan=2 height=38 class=xl65 style='height:28.8pt'>4</td>
+          </tr>
+          <tr height=19 style='height:14.4pt'>
+          </tr>
+          <!--EndFragment-->
+          </table>
+
+          </body>
+        `,
+      }),
+    );
+    await vi.runAllTimersAsync();
+
+    expect(quill.root).toEqualHTML(
+      `
+        <p><br></p>
+        <div>
+          <table cellpadding="0" cellspacing="0">
+            ${createTaleColHTML(4, { full: false, width: 63 })}
+            <tbody>
+              <tr>
+                <td rowspan="6" colspan="2" data-empty-row="length:1">
+                  <div data-empty-row="length:1"><p>1</p></div>
+                </td>
+                <td rowspan="2" colspan="2" data-empty-row="length:1">
+                  <div data-empty-row="length:1"><p>2</p></div>
+                </td>
+              </tr>
+              <tr></tr>
+              <tr>
+                <td rowspan="2" colspan="2" data-empty-row="length:1">
+                  <div data-empty-row="length:1"><p>3</p></div>
+                </td>
+              </tr>
+              <tr></tr>
+              <tr>
+                <td rowspan="2" colspan="2" data-empty-row="length:1">
+                  <div data-empty-row="length:1"><p>4</p></div>
+                </td>
+              </tr>
+              <tr></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><br></p>
+      `,
+      {
+        ignoreAttrs: ['data-wrap-tag', 'data-tag', 'class', 'data-table-id', 'data-row-id', 'data-col-id', 'data-rowspan', 'data-colspan', 'data-style', 'style', 'contenteditable'],
+        replaceAttrs: {
+          'data-empty-row': replaceAttrEmptyRow,
+        },
+      },
+    );
+    expectDelta(
+      new Delta([
+        { insert: '\n' },
+        { insert: { 'table-up-col': { full: false, width: 63 } } },
+        { insert: { 'table-up-col': { full: false, width: 63 } } },
+        { insert: { 'table-up-col': { full: false, width: 63 } } },
+        { insert: { 'table-up-col': { full: false, width: 63 } } },
+        { insert: '1' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 6, colspan: 2 } }, insert: '\n' },
+        { insert: '2' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 2, colspan: 2 } }, insert: '\n' },
+        { insert: '3' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 2, colspan: 2 } }, insert: '\n' },
+        { insert: '4' },
+        { attributes: { 'table-up-cell-inner': { rowspan: 2, colspan: 2 } }, insert: '\n' },
+        { insert: '\n' },
+      ]),
+      quill.getContents(),
     );
   });
 });
@@ -1922,7 +1924,7 @@ describe('clipboard content format', () => {
   });
 
   it('clipboard convert cell with background on tr', async () => {
-    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const quill = createQuillWithTableModule(`<p><br></p>`, { full: false });
     // color convert hex in quill internal
     quill.setContents(
       quill.clipboard.convert({
