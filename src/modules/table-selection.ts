@@ -375,7 +375,7 @@ export class TableSelection extends TableDomSelector {
             { x: Math.floor(boundary.x), y: Math.floor(boundary.y), x1: Math.floor(boundary.x1), y1: Math.floor(boundary.y1) },
             { x: Math.floor(x), y: Math.floor(y), x1: Math.floor(right), y1: Math.floor(bottom) },
             ERROR_LIMIT,
-            selectedCells.size === 0,
+            false,
           )
         ) {
           // add cell to selected
@@ -495,7 +495,8 @@ export class TableSelection extends TableDomSelector {
     }
     const startPoint = { x: Infinity, y: Infinity };
     const endPoint = { x: -Infinity, y: -Infinity };
-    for (const td of this.selectedTds) {
+    for (const cell of this.selectedTds) {
+      const td = cell.parent;
       const rect = td.domNode.getBoundingClientRect();
       startPoint.x = Math.min(startPoint.x, rect.left);
       startPoint.y = Math.min(startPoint.y, rect.top);
