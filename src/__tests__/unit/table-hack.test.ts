@@ -947,7 +947,7 @@ describe('hack toolbar clean handler', () => {
     );
   });
 
-  it('clean handler should clean cell selectedTds style', () => {
+  it('clean handler should preserve cell style but clean inner format when selection inside cell', () => {
     const quill = createQuillWithTableModule('<p></p>', { modules: [{ module: TableSelection }] });
     quill.setContents([
       { insert: '\n' },
@@ -1010,5 +1010,406 @@ describe('hack toolbar clean handler', () => {
         { insert: '\n' },
       ]),
     );
+  });
+});
+
+describe('hack toolbar indent handler', () => {
+  it('indent handler should fallback to original handler when no multi-cell selection', () => {
+    const customIndentHandler = vi.fn(function (this: any, value: any) {
+      this.quill.format('indent', value === '+1' ? 1 : -1, Quill.sources.USER);
+    });
+    const quill = createQuillWithTableModule('<p>12345</p>', {}, {
+      toolbar: {
+        handlers: {
+          indent: customIndentHandler,
+        },
+      },
+    });
+
+    quill.setSelection(2, 3, Quill.sources.SILENT);
+    quill.theme.modules.toolbar!.handlers!.indent.call(quill.theme.modules.toolbar as any, '+1');
+
+    expect(customIndentHandler).toHaveBeenCalledWith('+1');
+    expectDelta(
+      quill.getContents(),
+      new Delta([
+        { insert: '12345' },
+        { attributes: { indent: 1 }, insert: '\n' },
+      ]),
+    );
+  });
+
+  it('indent handler should use custom logic when multiple cells selected', () => {
+    const customIndentHandler = vi.fn();
+    const quill = createQuillWithTableModule('<p></p>', { modules: [{ module: TableSelection }] }, {
+      toolbar: {
+        handlers: {
+          indent: customIndentHandler,
+        },
+      },
+    });
+    quill.setContents([
+      { insert: '\n' },
+      { insert: { 'table-up-col': { tableId: '1', colId: '1', full: false, width: 100 } } },
+      { insert: { 'table-up-col': { tableId: '1', colId: '2', full: false, width: 100 } } },
+      { insert: '1' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '2' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '3' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '4' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '\n' },
+    ]);
+
+    const tableUp = quill.getModule(TableUp.moduleName) as TableUp;
+    const tds = quill.scroll.descendants(TableCellInnerFormat, 0);
+    const tableSelection = tableUp.getModule<TableSelection>('table-selection');
+    tableSelection!.table = quill.root.querySelector('table')!;
+    tableSelection!.setSelectedTds([tds[0], tds[1]]);
+
+    quill.theme.modules.toolbar!.handlers!.indent.call(quill.theme.modules.toolbar as any, '+1');
+
+    expect(customIndentHandler).not.toHaveBeenCalled();
+    expectDelta(
+      quill.getContents(),
+      new Delta([
+        { insert: '\n' },
+        { insert: { 'table-up-col': { tableId: '1', colId: '1', full: false, width: 100 } } },
+        { insert: { 'table-up-col': { tableId: '1', colId: '2', full: false, width: 100 } } },
+        { insert: '1' },
+        { attributes: { 'indent': 1, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '2' },
+        { attributes: { 'indent': 1, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '3' },
+        { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '1', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '4' },
+        { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '2', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '\n' },
+      ]),
+    );
+  });
+
+  it('indent handler should increase indent from 1 to 2 on selected cells', () => {
+    const quill = createQuillWithTableModule('<p></p>', { modules: [{ module: TableSelection }] });
+    quill.setContents([
+      { insert: '\n' },
+      { insert: { 'table-up-col': { tableId: '1', colId: '1', full: false, width: 100 } } },
+      { insert: { 'table-up-col': { tableId: '1', colId: '2', full: false, width: 100 } } },
+      { insert: '1' },
+      { attributes: { 'indent': 1, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '2' },
+      { attributes: { 'indent': 1, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '3' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '4' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '\n' },
+    ]);
+
+    const tableUp = quill.getModule(TableUp.moduleName) as TableUp;
+    const tds = quill.scroll.descendants(TableCellInnerFormat, 0);
+    const tableSelection = tableUp.getModule<TableSelection>('table-selection');
+    tableSelection!.table = quill.root.querySelector('table')!;
+    tableSelection!.setSelectedTds([tds[0], tds[1]]);
+
+    quill.theme.modules.toolbar!.handlers!.indent.call(quill.theme.modules.toolbar as any, '+1');
+    expectDelta(
+      quill.getContents(),
+      new Delta([
+        { insert: '\n' },
+        { insert: { 'table-up-col': { tableId: '1', colId: '1', full: false, width: 100 } } },
+        { insert: { 'table-up-col': { tableId: '1', colId: '2', full: false, width: 100 } } },
+        { insert: '1' },
+        { attributes: { 'indent': 2, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '2' },
+        { attributes: { 'indent': 2, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '3' },
+        { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '1', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '4' },
+        { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '2', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '\n' },
+      ]),
+    );
+  });
+
+  it('indent handler should decrease indent on selected cells with -1', () => {
+    const quill = createQuillWithTableModule('<p></p>', { modules: [{ module: TableSelection }] });
+    quill.setContents([
+      { insert: '\n' },
+      { insert: { 'table-up-col': { tableId: '1', colId: '1', full: false, width: 100 } } },
+      { insert: { 'table-up-col': { tableId: '1', colId: '2', full: false, width: 100 } } },
+      { insert: '1' },
+      { attributes: { 'indent': 2, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '2' },
+      { attributes: { 'indent': 2, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '3' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '4' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '\n' },
+    ]);
+
+    const tableUp = quill.getModule(TableUp.moduleName) as TableUp;
+    const tds = quill.scroll.descendants(TableCellInnerFormat, 0);
+    const tableSelection = tableUp.getModule<TableSelection>('table-selection');
+    tableSelection!.table = quill.root.querySelector('table')!;
+    tableSelection!.setSelectedTds([tds[0], tds[1]]);
+
+    quill.theme.modules.toolbar!.handlers!.indent.call(quill.theme.modules.toolbar as any, '-1');
+    expectDelta(
+      quill.getContents(),
+      new Delta([
+        { insert: '\n' },
+        { insert: { 'table-up-col': { tableId: '1', colId: '1', full: false, width: 100 } } },
+        { insert: { 'table-up-col': { tableId: '1', colId: '2', full: false, width: 100 } } },
+        { insert: '1' },
+        { attributes: { 'indent': 1, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '2' },
+        { attributes: { 'indent': 1, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '3' },
+        { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '1', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '4' },
+        { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '2', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '\n' },
+      ]),
+    );
+  });
+
+  it('indent handler should do nothing when single cell selected', () => {
+    const customIndentHandler = vi.fn(function (this: any, value: any) {
+      this.quill.format('indent', value === '+1' ? 1 : -1, Quill.sources.USER);
+    });
+    const quill = createQuillWithTableModule('<p></p>', { modules: [{ module: TableSelection }] }, {
+      toolbar: {
+        handlers: {
+          indent: customIndentHandler,
+        },
+      },
+    });
+    quill.setContents([
+      { insert: '\n' },
+      { insert: { 'table-up-col': { tableId: '1', colId: '1', full: false, width: 100 } } },
+      { insert: { 'table-up-col': { tableId: '1', colId: '2', full: false, width: 100 } } },
+      { insert: '1' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '2' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '\n' },
+    ]);
+
+    // single cell selected (length 0, not multi-select)
+    quill.setSelection(4, 0, Quill.sources.SILENT);
+    quill.theme.modules.toolbar!.handlers!.indent.call(quill.theme.modules.toolbar as any, '+1');
+
+    // should call fallback custom handler because selectedTds.length <= 1
+    expect(customIndentHandler).toHaveBeenCalledWith('+1');
+  });
+});
+
+describe('hack format move cursor to last selected td', () => {
+  it('should move cursor into last selected cell when cursor not in cell', () => {
+    const quill = createQuillWithTableModule('<p>text</p>', { modules: [{ module: TableSelection }] });
+    quill.setContents([
+      { insert: 'outside\n' },
+      { insert: { 'table-up-col': { tableId: '1', colId: '1', full: false, width: 100 } } },
+      { insert: { 'table-up-col': { tableId: '1', colId: '2', full: false, width: 100 } } },
+      { insert: '1' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '2' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '3' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '4' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '\n' },
+    ]);
+
+    // set selection outside table
+    quill.setSelection(2, 0, Quill.sources.SILENT);
+    quill.blur();
+
+    const tableUp = quill.getModule(TableUp.moduleName) as TableUp;
+    const tds = quill.scroll.descendants(TableCellInnerFormat, 0);
+    const tableSelection = tableUp.getModule<TableSelection>('table-selection');
+    tableSelection!.table = quill.root.querySelector('table')!;
+    tableSelection!.setSelectedTds([tds[0], tds[1]]);
+
+    // format bold when cursor is outside table but cells are selected
+    quill.format('bold', true);
+
+    // should have formatted the selected cells
+    expectDelta(
+      quill.getContents(),
+      new Delta([
+        { insert: 'outside\n' },
+        { insert: { 'table-up-col': { tableId: '1', colId: '1', full: false, width: 100 } } },
+        { insert: { 'table-up-col': { tableId: '1', colId: '2', full: false, width: 100 } } },
+        { attributes: { bold: true }, insert: '1' },
+        { attributes: { 'bold': true, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { attributes: { bold: true }, insert: '2' },
+        { attributes: { 'bold': true, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '3' },
+        { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '1', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '4' },
+        { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '2', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '\n' },
+      ]),
+    );
+  });
+
+  it('should toggle format off when all selected cells have same format', () => {
+    const quill = createQuillWithTableModule('<p></p>', { modules: [{ module: TableSelection }] });
+    quill.setContents([
+      { insert: '\n' },
+      { insert: { 'table-up-col': { tableId: '1', colId: '1', full: false, width: 100 } } },
+      { insert: { 'table-up-col': { tableId: '1', colId: '2', full: false, width: 100 } } },
+      { attributes: { bold: true }, insert: '1' },
+      { attributes: { 'bold': true, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { attributes: { bold: true }, insert: '2' },
+      { attributes: { 'bold': true, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '3' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '4' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '\n' },
+    ]);
+
+    const tableUp = quill.getModule(TableUp.moduleName) as TableUp;
+    const tds = quill.scroll.descendants(TableCellInnerFormat, 0);
+    const tableSelection = tableUp.getModule<TableSelection>('table-selection');
+    tableSelection!.table = quill.root.querySelector('table')!;
+    tableSelection!.setSelectedTds([tds[0], tds[1]]);
+
+    quill.format('bold', true);
+    expectDelta(
+      quill.getContents(),
+      new Delta([
+        { insert: '\n' },
+        { insert: { 'table-up-col': { tableId: '1', colId: '1', full: false, width: 100 } } },
+        { insert: { 'table-up-col': { tableId: '1', colId: '2', full: false, width: 100 } } },
+        { insert: '1' },
+        { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '2' },
+        { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '3' },
+        { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '1', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '4' },
+        { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '2', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '\n' },
+      ]),
+    );
+  });
+
+  it('should apply format when not all selected cells have same format value', () => {
+    const quill = createQuillWithTableModule('<p></p>', { modules: [{ module: TableSelection }] });
+    quill.setContents([
+      { insert: '\n' },
+      { insert: { 'table-up-col': { tableId: '1', colId: '1', full: false, width: 100 } } },
+      { insert: { 'table-up-col': { tableId: '1', colId: '2', full: false, width: 100 } } },
+      { attributes: { bold: true }, insert: '1' },
+      { attributes: { 'bold': true, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '2' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '3' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '4' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '\n' },
+    ]);
+
+    const tableUp = quill.getModule(TableUp.moduleName) as TableUp;
+    const tds = quill.scroll.descendants(TableCellInnerFormat, 0);
+    const tableSelection = tableUp.getModule<TableSelection>('table-selection');
+    tableSelection!.table = quill.root.querySelector('table')!;
+    tableSelection!.setSelectedTds([tds[0], tds[1]]);
+
+    quill.format('bold', true);
+    expectDelta(
+      quill.getContents(),
+      new Delta([
+        { insert: '\n' },
+        { insert: { 'table-up-col': { tableId: '1', colId: '1', full: false, width: 100 } } },
+        { insert: { 'table-up-col': { tableId: '1', colId: '2', full: false, width: 100 } } },
+        { attributes: { bold: true }, insert: '1' },
+        { attributes: { 'bold': true, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { attributes: { bold: true }, insert: '2' },
+        { attributes: { 'bold': true, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '3' },
+        { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '1', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '4' },
+        { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '2', rowspan: 1, colspan: 1, tag: 'td', wrapTag: 'tbody' } }, insert: '\n' },
+        { insert: '\n' },
+      ]),
+    );
+  });
+});
+
+describe('getSelectedTdsFormat', () => {
+  it('should return empty object when no cells selected', () => {
+    const quill = createQuillWithTableModule('<p></p>', { modules: [{ module: TableSelection }] });
+    quill.setContents(createTableDeltaOps(2, 2, { full: false }));
+
+    const tableUp = quill.getModule(TableUp.moduleName) as TableUp;
+    const tableSelection = tableUp.getModule<TableSelection>('table-selection');
+    tableSelection!.setSelectedTds([]);
+
+    const result = tableSelection!.getSelectedTdsFormat();
+    expect(result).toEqual({});
+  });
+
+  it('should return intersected formats from selected cells', () => {
+    const quill = createQuillWithTableModule('<p></p>', { modules: [{ module: TableSelection }] });
+    quill.setContents([
+      { insert: '\n' },
+      { insert: { 'table-up-col': { tableId: '1', colId: '1', full: false, width: 100 } } },
+      { insert: { 'table-up-col': { tableId: '1', colId: '2', full: false, width: 100 } } },
+      { attributes: { bold: true }, insert: '1' },
+      { attributes: { 'bold': true, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { attributes: { bold: true }, insert: '2' },
+      { attributes: { 'bold': true, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '3' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '4' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '\n' },
+    ]);
+
+    const tableUp = quill.getModule(TableUp.moduleName) as TableUp;
+    const tds = quill.scroll.descendants(TableCellInnerFormat, 0);
+    const tableSelection = tableUp.getModule<TableSelection>('table-selection');
+    tableSelection!.table = quill.root.querySelector('table')!;
+    tableSelection!.setSelectedTds([tds[0], tds[1]]);
+
+    const result = tableSelection!.getSelectedTdsFormat();
+    expect(result.bold).toBe(true);
+  });
+
+  it('should not return format that differs between cells', () => {
+    const quill = createQuillWithTableModule('<p></p>', { modules: [{ module: TableSelection }] });
+    quill.setContents([
+      { insert: '\n' },
+      { insert: { 'table-up-col': { tableId: '1', colId: '1', full: false, width: 100 } } },
+      { insert: { 'table-up-col': { tableId: '1', colId: '2', full: false, width: 100 } } },
+      { attributes: { bold: true }, insert: '1' },
+      { attributes: { 'bold': true, 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '2' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '3' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '4' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '\n' },
+    ]);
+
+    const tableUp = quill.getModule(TableUp.moduleName) as TableUp;
+    const tds = quill.scroll.descendants(TableCellInnerFormat, 0);
+    const tableSelection = tableUp.getModule<TableSelection>('table-selection');
+    tableSelection!.table = quill.root.querySelector('table')!;
+    tableSelection!.setSelectedTds([tds[0], tds[1]]);
+
+    const result = tableSelection!.getSelectedTdsFormat();
+    expect(result.bold).toBeUndefined();
   });
 });
