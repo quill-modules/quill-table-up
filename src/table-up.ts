@@ -515,10 +515,18 @@ export class TableUp {
       // filter embed blot
       if (!((blot as TypeParchment.BlotConstructor).prototype instanceof Parchment.EmbedBlot)) {
         const tableUpModule = this.getModule(tableUpInternal.moduleName) as TableUp;
-        const range = this.getSelection(true);
-        const formats = this.getFormat(range);
+        let range = this.getSelection(true);
+        let formats = this.getFormat(range);
         // only when selection in cell and selectedTds > 1 can format all cells
         const tableSelection = tableUpModule.getModule<TableSelection>(tableUpInternal.tableSelectionName);
+        // if cursor not in cell but cells are selected, move cursor into last selected cell
+        if (!formats[blotName.tableCellInner] && tableSelection && tableSelection.selectedTds.length > 1) {
+          const lastTd = tableSelection.selectedTds[tableSelection.selectedTds.length - 1];
+          const lastTdIndex = lastTd.offset(this.scroll);
+          this.setSelection(lastTdIndex + lastTd.length() - 1, 0, Quill.sources.SILENT);
+          range = this.getSelection(true);
+          formats = this.getFormat(range);
+        }
         if (!formats[blotName.tableCellInner] || range.length > 0 || (tableUpModule && tableSelection && tableSelection.selectedTds.length <= 1)) {
           return originFormat.call(this, name, value, source);
         }
@@ -526,20 +534,16 @@ export class TableUp {
         if (tableUpModule && tableSelection && tableSelection.selectedTds.length > 0) {
           const selectedTds = tableSelection.selectedTds;
           // calculate the format value. the format should be canceled when this value exists in all selected cells
-          let setOrigin = false;
+          const tdFormats = tableSelection.getSelectedTdsFormat();
+          const setOrigin = tdFormats[name] !== value;
+          const resultValue = setOrigin ? value : false;
+          const delta = new Delta();
           const tdRanges = [];
           for (const innerTd of selectedTds) {
             const index = innerTd.offset(this.scroll);
             const length = innerTd.length();
             tdRanges.push({ index, length });
-            const format = this.getFormat(index, length);
-            if (format[name] !== value) {
-              setOrigin = true;
-            }
           }
-          const resultValue = setOrigin ? value : false;
-
-          const delta = new Delta();
           for (const [i, { index, length }] of tdRanges.entries()) {
             const lastIndex = i === 0 ? 0 : tdRanges[i - 1].index + tdRanges[i - 1].length;
             delta.retain(index - lastIndex).retain(length, { [name]: resultValue });

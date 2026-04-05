@@ -243,6 +243,25 @@ export class TableSelection extends TableDomSelector {
     } as TableSelectionOptions, options);
   }
 
+  getSelectedTdsFormat() {
+    if (this.selectedTds.length <= 0) return {};
+    const allFormats: Record<string, any>[] = [];
+    for (const innerTd of this.selectedTds) {
+      const index = innerTd.offset(this.quill.scroll);
+      const length = innerTd.length();
+      allFormats.push(this.quill.getFormat(index, length));
+    }
+    // intersect: only keep formats that exist in ALL tds with the same value
+    const result: Record<string, any> = {};
+    const first = allFormats[0];
+    for (const [key, value] of Object.entries(first)) {
+      if (allFormats.every(f => f[key] === value)) {
+        result[key] = value;
+      }
+    }
+    return result;
+  }
+
   selectionChangeHandler = () => {
     const selection = window.getSelection();
     if (!selection) return;
