@@ -20,9 +20,10 @@ const baseOptions = {
   dts: true,
   plugins: [],
   ignoreWatch: ['./src/__tests__', './src/style'],
-  external: ['quill'],
-  noExternal: ['@floating-ui/dom'],
-  inlineOnly: ['@floating-ui/utils', '@floating-ui/core', '@floating-ui/dom'],
+  deps: {
+    neverBundle: ['quill'],
+    alwaysBundle: ['@floating-ui/dom'],
+  },
   loader: {
     '.svg': 'text',
   } as const,
