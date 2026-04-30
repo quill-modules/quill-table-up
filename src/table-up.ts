@@ -11,6 +11,10 @@ import { BlockEmbedOverride, BlockOverride, ContainerFormat, ScrollOverride, Tab
 import { TableClipboard } from './modules';
 import { blotName, createBEM, createSelectBox, cssTextToObject, debounce, findParentBlot, findParentBlots, getScrollBarWidth, isForbidInTable, isFunction, isNumber, isString, isSubclassOf, isUndefined, limitDomInViewPort, mixinClass, objectToCssText, randomId, tableCantInsert, tableUpEvent, tableUpInternal, tableUpSize, toCamelCase } from './utils';
 
+type KeysWithValue<T, V> = { [K in keyof T]: T[K] extends V ? K : never }[keyof T] & (keyof T);
+type RestrictTo<T, V> = { [K in KeysWithValue<T, V>]: V };
+type TableUpOptionsBools = RestrictTo<TableUpOptions, boolean>;
+
 const Parchment = Quill.import('parchment');
 const Delta = Quill.import('delta');
 const icons = Quill.import('ui/icons') as Record<string, any>;
@@ -378,6 +382,8 @@ export class TableUp {
       texts: this.resolveTexts(texts),
       full: false,
       fullSwitch: true,
+      withHeader: false,
+      withHeaderSwitch: false,
       icon: icons.table,
       autoMergeCell: true,
       pasteStyleSheet: false,
@@ -389,6 +395,7 @@ export class TableUp {
   resolveTexts(options?: TableTextOptionsInput) {
     const defaults: TableTextOptions = {
       fullCheckboxText: 'Insert full width table',
+      headerCheckboxText: 'Include header',
       customBtnText: 'Custom',
       confirmText: 'Confirm',
       cancelText: 'Cancel',
@@ -720,28 +727,33 @@ export class TableUp {
     }
   }
 
+  private appendCheckbox(dom: HTMLElement, cfg: keyof TableUpOptionsBools, cfgSwitch: keyof TableUpOptionsBools, checkboxText: keyof TableUpOptions['texts']) {
+    if (this.options[cfgSwitch]) {
+      const bem = createBEM('creator');
+      const label = document.createElement('label');
+      label.classList.add(bem.be('checkbox'));
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = this.options[cfg];
+      checkbox.addEventListener('change', () => {
+        this.options[cfg] = checkbox.checked;
+      });
+      const checkboxTextElt = document.createElement('span');
+      checkboxTextElt.textContent = this.options.texts[checkboxText];
+      label.appendChild(checkbox);
+      label.appendChild(checkboxTextElt);
+      dom.appendChild(label);
+    }
+  }
+
   async buildCustomSelect(customSelect: ((module: TableUp, picker: QuillThemePicker) => HTMLElement | Promise<HTMLElement>) | undefined, picker: QuillThemePicker) {
     if (!customSelect || !isFunction(customSelect)) return;
     const dom = document.createElement('span');
     dom.classList.add('ql-custom-select');
     this.selector = await customSelect(this, picker);
     dom.appendChild(this.selector);
-    if (this.options.fullSwitch) {
-      const bem = createBEM('creator');
-      const isFulllLabel = document.createElement('label');
-      isFulllLabel.classList.add(bem.be('checkbox'));
-      const isFullCheckbox = document.createElement('input');
-      isFullCheckbox.type = 'checkbox';
-      isFullCheckbox.checked = this.options.full;
-      isFullCheckbox.addEventListener('change', () => {
-        this.options.full = isFullCheckbox.checked;
-      });
-      const isFullCheckboxText = document.createElement('span');
-      isFullCheckboxText.textContent = this.options.texts.fullCheckboxText;
-      isFulllLabel.appendChild(isFullCheckbox);
-      isFulllLabel.appendChild(isFullCheckboxText);
-      dom.appendChild(isFulllLabel);
-    }
+    this.appendCheckbox(dom, 'full', 'fullSwitch', 'fullCheckboxText');
+    this.appendCheckbox(dom, 'withHeader', 'withHeaderSwitch', 'headerCheckboxText');
     picker.options.innerHTML = '';
     picker.options.appendChild(dom);
   }
@@ -912,6 +924,16 @@ export class TableUp {
         },
       });
     }
+    let tag;
+    let wrapTag;
+    if (this.options.withHeader) {
+      tag = 'th';
+      wrapTag = 'thead';
+    }
+    else {
+      tag = 'td';
+      wrapTag = 'tbody';
+    }
     for (let j = 0; j < rows; j++) {
       const rowId = randomId();
       for (let i = 0; i < columns; i++) {
@@ -924,10 +946,14 @@ export class TableUp {
               colId: colIds[i],
               rowspan: 1,
               colspan: 1,
+              tag,
+              wrapTag,
             },
           },
         });
       }
+      tag = 'td';
+      wrapTag = 'tbody';
     }
 
     this.quill.updateContents(new Delta(delta), source);
