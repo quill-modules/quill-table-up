@@ -1,0 +1,26 @@
+src/__tests__/unit/table-insert.test.ts
+  8013c8cf4f5d71aa 2,454-484
+src/__tests__/unit/table-refresh-ui.test.ts
+  8013c8cf4f5d71aa 21,29,32,37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "ed365ff0ba5f8860c94a2e3e38827ef071d5fff5",
+  "prompts": {
+    "8013c8cf4f5d71aa": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019de766-a42f-7151-a977-f792dccd3250",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "zzxming",
+      "messages": [],
+      "total_additions": 39,
+      "total_deletions": 0,
+      "accepted_lines": 39,
+      "overriden_lines": 0,
+      "messages_url": "https://tripartite-bff.tsign.cn/cas/50cc7c7979923d75948d6406617afef37c403f9e5a0eb1c13258ef9c99f96ec0"
+    }
+  }
+}
