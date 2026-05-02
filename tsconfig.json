@@ -2,9 +2,11 @@
   "compilerOptions": {
     "target": "ESNext",
     "lib": ["ESNext", "DOM"],
-    "baseUrl": ".",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "paths": {
+      "*": ["./*"]
+    },
     "types": ["./src/types.d.ts"],
     "allowJs": false,
     "strict": true,

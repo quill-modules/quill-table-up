@@ -6,7 +6,7 @@ export default defineConfig({
   test: {
     clearMocks: true,
     environment: 'jsdom',
-    setupFiles: ['./vitest.setup.ts'],
+    setupFiles: [resolve(__dirname, './vitest.setup.ts')],
     include: ['**/__tests__/unit/*.{test,spec}.ts'],
     exclude: ['**/dits/**', '**/node_modules/**'],
     coverage: {
