@@ -159,6 +159,14 @@ export class TableColFormat extends BlockEmbed {
           console.warn('TableCol not in TableColgroup');
         }
       }
+      else if (value !== this.statics.blotName) {
+        // Redirect non-tableCol embeds/blots (e.g. image from undo) outside table wrapper.
+        // Otherwise they are inserted into colgroup and then removed by allowedChildren check.
+        const tableWrapperBlot = findParentBlot(this, blotName.tableWrapper);
+        const parentBlot = tableWrapperBlot.split(this.offset(tableWrapperBlot)) as TypeParchment.Parent;
+        const blot = this.scroll.create(value, def);
+        parentBlot.parent.insertBefore(blot, parentBlot);
+      }
       else {
         super.insertAt(index, value, def);
       }

@@ -34,6 +34,46 @@ afterEach(() => {
 });
 
 describe('table undo', () => {
+  it('undo remove column with merged cell and image should keep embed/content/format', async () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const tableModule = quill.getModule(TableUp.moduleName) as TableUp;
+    quill.setContents([
+      { insert: '\n' },
+      { insert: { 'table-up-col': { tableId: '1', colId: '1', full: true, width: 33.3333 } } },
+      { insert: { 'table-up-col': { tableId: '1', colId: '2', full: true, width: 33.3333 } } },
+      { insert: { 'table-up-col': { tableId: '1', colId: '3', full: true, width: 33.3333 } } },
+      { insert: { image: 'https://live.mdnplay.dev/en-US/docs/Web/HTML/Element/img/favicon144.png' } },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: 'text' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: 'r1c3' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '1', colId: '3', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: 'merged' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '1', rowspan: 1, colspan: 2 } }, insert: '\n' },
+      { insert: 'r2c3' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '2', colId: '3', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: 'r3c1' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '3', colId: '1', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: 'r3c2' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '3', colId: '2', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: 'r3c3' },
+      { attributes: { 'table-up-cell-inner': { tableId: '1', rowId: '3', colId: '3', rowspan: 1, colspan: 1 } }, insert: '\n' },
+      { insert: '\n' },
+    ]);
+    await vi.runAllTimersAsync();
+    const initDelta = quill.getContents();
+
+    const tds = quill.scroll.descendants(TableCellInnerFormat, 0);
+    tableModule.removeCol(tds.filter(td => td.colId === '1'));
+    await vi.runAllTimersAsync();
+    quill.history.undo();
+    await vi.runAllTimersAsync();
+
+    expectDelta(quill.getContents(), initDelta);
+    expect(quill.root.querySelector('tbody img')).not.toBeNull();
+    expect(quill.root.querySelector('colgroup img')).toBeNull();
+  });
+
   it('merge all cell undo', async () => {
     const quill = await createTable(3, 3);
     const tableModule = quill.getModule(TableUp.moduleName) as TableUp;
