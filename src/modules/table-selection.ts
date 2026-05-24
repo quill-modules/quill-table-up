@@ -345,6 +345,7 @@ export class TableSelection extends TableDomSelector {
       }),
     );
 
+    // TODO 计算当有 fixed 时重叠的 cell,
     const scrollDiff = this.getScrollPositionDiff();
     // set boundary to initially mouse move rectangle
     const { rect: tableRect } = getTableMainRect(tableMainBlot);
