@@ -98,7 +98,7 @@ export class TableResizeScale extends TableDomSelector {
     if (!tableRect) return;
     const tableWrapperRect = this.tableWrapperBlot.domNode.getBoundingClientRect();
     const editorRect = this.quill.root.getBoundingClientRect();
-    const { scrollTop, scrollLeft } = this.tableWrapperBlot.domNode;
+    const { scrollLeft } = this.tableWrapperBlot.domNode;
     const blockSize = this.options.blockSize * 2 + this.options.offset;
     const rootWidth = Math.min(tableRect.width, tableWrapperRect.width) + blockSize;
     const rootHeight = Math.min(tableRect.height, tableWrapperRect.height) + blockSize;
@@ -110,7 +110,7 @@ export class TableResizeScale extends TableDomSelector {
     });
     const blockStyle = {
       left: `${tableRect.width + blockSize - scrollLeft}px`,
-      top: `${rootHeight - scrollTop}px`,
+      top: `${rootHeight}px`,
     };
     if (isTableAlignRight(this.tableMainBlot)) {
       this.root.classList.add(this.bem.is('align-right'));
