@@ -22,12 +22,18 @@ export class TableColFormat extends BlockEmbed {
   }
 
   static create(value: TableColValue) {
-    const { width, tableId, colId, full, align } = value;
+    const { width, tableId, colId, full, align, freezeRow, freezeCol } = value;
     const node = super.create() as HTMLElement;
     node.setAttribute('width', this.validWidth(width, !!full));
     full && (node.dataset.full = String(full));
     if (align && align !== 'left') {
       node.dataset.align = align;
+    }
+    if (freezeRow) {
+      node.dataset.freezeRow = String(freezeRow);
+    }
+    if (freezeCol) {
+      node.dataset.freezeCol = String(freezeCol);
     }
     node.dataset.tableId = tableId;
     node.dataset.colId = colId;
@@ -35,7 +41,7 @@ export class TableColFormat extends BlockEmbed {
   }
 
   static value(domNode: HTMLElement) {
-    const { tableId, colId } = domNode.dataset;
+    const { tableId, colId, freezeRow, freezeCol } = domNode.dataset;
     const width = domNode.getAttribute('width') || String(tableUpSize.colDefaultWidth);
     const align = domNode.dataset.align;
     const full = Object.hasOwn(domNode.dataset, 'full');
@@ -46,6 +52,14 @@ export class TableColFormat extends BlockEmbed {
       width: Number.parseFloat(width),
     };
     align && (value.align = align);
+    const freezeRowNumber = Number(freezeRow);
+    if (freezeRowNumber > 0) {
+      value.freezeRow = freezeRowNumber;
+    }
+    const freezeColNumber = Number(freezeCol);
+    if (freezeColNumber > 0) {
+      value.freezeCol = freezeColNumber;
+    }
     return value;
   }
 
@@ -102,6 +116,32 @@ export class TableColFormat extends BlockEmbed {
     }
     else {
       this.domNode.removeAttribute('data-align');
+    }
+  }
+
+  get freezeRow() {
+    return Number(this.domNode.dataset.freezeRow) || 0;
+  }
+
+  set freezeRow(value: number) {
+    if (value > 0) {
+      this.domNode.dataset.freezeRow = String(value);
+    }
+    else {
+      this.domNode.removeAttribute('data-freeze-row');
+    }
+  }
+
+  get freezeCol() {
+    return Number(this.domNode.dataset.freezeCol) || 0;
+  }
+
+  set freezeCol(value: number) {
+    if (value > 0) {
+      this.domNode.dataset.freezeCol = String(value);
+    }
+    else {
+      this.domNode.removeAttribute('data-freeze-col');
     }
   }
 

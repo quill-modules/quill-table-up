@@ -3,6 +3,7 @@ import type { TableValue } from '../utils';
 import type { TableBodyFormat } from './table-body-format';
 import { blotName, randomId, tableUpSize } from '../utils';
 import { ContainerFormat } from './container-format';
+import { TableCellFormat } from './table-cell-format';
 import { TableCellInnerFormat } from './table-cell-inner-format';
 import { TableColFormat } from './table-col-format';
 import { TableRowFormat } from './table-row-format';
@@ -76,6 +77,88 @@ export class TableMainFormat extends ContainerFormat {
       this.domNode.removeAttribute('data-align');
     }
     this.updateAlign();
+  }
+
+  get freezeRow() {
+    const cols = this.getCols();
+    let max = 0;
+    for (const col of cols) {
+      if (col.freezeRow > max) max = col.freezeRow;
+    }
+    return max;
+  }
+
+  setFreezeRow(value: number) {
+    const cols = this.getCols();
+    for (const col of cols) {
+      col.freezeRow = value;
+    }
+    this.updateFreezeRows();
+  }
+
+  updateFreezeRows(animate: boolean = false) {
+    const rows = this.getRows();
+    const freezeRow = this.freezeRow;
+    let top = 0;
+    for (const [i, row] of rows.entries()) {
+      const node = row.domNode;
+      if (i < freezeRow) {
+        node.classList.add('is-frozen');
+        node.classList.toggle('is-frozen-animate', animate);
+        node.style.top = `${top}px`;
+        top += node.getBoundingClientRect().height;
+      }
+      else {
+        node.classList.remove('is-frozen', 'is-frozen-animate');
+        node.style.top = '';
+      }
+    }
+  }
+
+  get freezeCol() {
+    const cols = this.getCols();
+    let max = 0;
+    for (const col of cols) {
+      if (col.freezeCol > max) max = col.freezeCol;
+    }
+    return max;
+  }
+
+  setFreezeCol(value: number) {
+    const cols = this.getCols();
+    for (const col of cols) {
+      col.freezeCol = value;
+    }
+    this.updateFreezeCols();
+  }
+
+  updateFreezeCols() {
+    const cols = this.getCols();
+    const freezeCol = this.freezeCol;
+    const colLefts = new Map<string, number>();
+    // `full` tables store `TableColFormat.width` as a percentage, not a pixel
+    // value, so it must be scaled by the table's actual rendered width before
+    // accumulating cascading offsets. Measure once per call to keep this cheap.
+    const tableWidth = this.full ? this.domNode.getBoundingClientRect().width : 0;
+    let left = 0;
+    for (const [i, col] of cols.entries()) {
+      if (i < freezeCol) {
+        colLefts.set(col.colId, left);
+        left += this.full ? (col.width / 100 * tableWidth) : col.width;
+      }
+    }
+    for (const cell of this.descendants(TableCellFormat)) {
+      const node = cell.domNode;
+      const cellLeft = colLefts.get(cell.colId);
+      if (cellLeft !== undefined) {
+        node.classList.add('is-frozen-col');
+        node.style.left = `${cellLeft}px`;
+      }
+      else {
+        node.classList.remove('is-frozen-col');
+        node.style.left = '';
+      }
+    }
   }
 
   setFull() {

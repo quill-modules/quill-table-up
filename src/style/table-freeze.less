@@ -1,0 +1,60 @@
+@import './variables.less';
+@import './functions.less';
+
+.ql-editor .ql-table {
+  .setCssVar(table-freeze-bg, #fff);
+
+  // border-collapse:collapse conflicts with position:sticky (rows or columns)
+  // in Chrome (borders glitch on scroll). Scope the fix to tables that
+  // actually have a frozen row/column so plain tables (which never use
+  // sticky) are unaffected.
+  &:has(.is-frozen, .is-frozen-col) {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+}
+
+.ql-table-row.is-frozen {
+  position: sticky;
+  z-index: 0;
+  background-color: .getCssVar(table-freeze-bg) [];
+
+  &:has(+ .ql-table-row.is-frozen) td,
+  &:has(+ .ql-table-row.is-frozen) th {
+    border-bottom: none;
+  }
+  & + .ql-table-row.is-frozen td,
+  & + .ql-table-row.is-frozen th {
+    border-top: 1px solid @table-border-color;
+  }
+}
+
+.ql-table-row.is-frozen-animate {
+  transition: top 0.15s ease;
+}
+
+.ql-table-cell.is-frozen-col {
+  position: sticky;
+  z-index: 0;
+  background-color: .getCssVar(table-freeze-bg) [];
+
+  // mirrors the row border fix (see `.ql-table-row.is-frozen` above), but
+  // horizontal: between two side-by-side frozen-column cells, the later one
+  // (to the right) paints on top of the earlier one at their shared edge
+  // under `border-collapse: separate`, so drop the earlier cell's
+  // border-right and let the later cell draw its own border-left instead.
+  &:has(+ .ql-table-cell.is-frozen-col) {
+    border-right: none;
+  }
+}
+.ql-table-cell.is-frozen-col + .ql-table-cell.is-frozen-col {
+  border-left: 1px solid @table-border-color;
+}
+
+// Corner cells (both row- and column-frozen) don't need their own `top` —
+// a `position: sticky; left: X` cell sitting inside an already-sticky `<tr>`
+// is carried vertically by its parent row for free. They only need to paint
+// above every other frozen band during scroll in either direction.
+.ql-table-row.is-frozen .ql-table-cell.is-frozen-col {
+  z-index: 1;
+}

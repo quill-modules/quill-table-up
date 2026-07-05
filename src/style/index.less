@@ -1,3 +1,5 @@
+@import './variables.less';
+
 .ql-toolbar {
   .ql-picker:not(.ql-color-picker):not(.ql-icon-picker).ql-table-up {
     width: 28px;
@@ -75,7 +77,7 @@
       }
       td,
       th {
-        border: 1px solid #a1a1aa;
+        border: 1px solid @table-border-color;
         & + td,
         & + th {
           border-left: none;
@@ -114,6 +116,7 @@
 }
 
 @import './table-selection.less';
+@import './table-freeze.less';
 @import './table-resize.less';
 @import './table-resize-scale.less';
 @import './table-scrollbar.less';

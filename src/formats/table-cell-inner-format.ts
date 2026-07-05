@@ -199,6 +199,18 @@ export class TableCellInnerFormat extends ContainerFormat {
     return tableBlot.getRowIds().indexOf(this.rowId);
   }
 
+  get isFrozenRow(): boolean {
+    const tableMain = findParentBlot(this, blotName.tableMain);
+    const rowIndex = this.getRowIndex();
+    return rowIndex !== -1 && rowIndex < tableMain.freezeRow;
+  }
+
+  get isFrozenCol(): boolean {
+    const tableMain = findParentBlot(this, blotName.tableMain);
+    const colIndex = this.getColumnIndex();
+    return colIndex !== -1 && colIndex < tableMain.freezeCol;
+  }
+
   getTableBody() {
     let target: TypeParchment.Parent = this.parent;
     while (target && !(target instanceof TableBodyFormat) && target !== this.scroll) {
