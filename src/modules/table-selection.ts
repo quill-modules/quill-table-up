@@ -25,11 +25,11 @@ export class TableSelection extends TableDomSelector {
   boundary: RelactiveRect | null = null;
   scrollRecordEls: HTMLElement[] = [];
   startScrollRecordPosition: Position[] = [];
-  selectedTableScrollX: number = 0;
-  selectedTableScrollY: number = 0;
-  selectedEditorScrollX: number = 0;
-  selectedEditorScrollY: number = 0;
   selectedTds: TableCellInnerFormat[] = [];
+  // whether the current drag's mousedown anchor started on a frozen row —
+  // determines whether vertical scroll-diff correction applies to it
+  dragAnchorFrozen: boolean = false;
+  dragAnchorFrozenCol: boolean = false;
   cellSelectWrap: HTMLElement;
   cellSelect: HTMLElement;
   scrollHandler: [HTMLElement, (...args: any[]) => void][] = [];
@@ -364,12 +364,76 @@ export class TableSelection extends TableDomSelector {
       }),
     );
 
+    // Sticky frozen rows/columns report their "stuck" screen rect regardless
+    // of scroll position. A normal cell that happens to scroll to the same
+    // screen band reports an identical rect. Exclude those hidden duplicates
+    // from hit testing using each cell's logical row/col position (not
+    // geometry) to identify the frozen band, then geometry only to find
+    // what's hidden underneath it. The two axes are independent and stack.
+    // `getRowIds`/`getColIds` (and `freezeRow`/`freezeCol`) are cached once per
+    // call here (rather than using the `isFrozenRow`/`isFrozenCol` getters per
+    // cell) because this loop runs over every cell in the table on every
+    // mousemove during drag-select, and those getters each re-run a
+    // `querySelectorAll` lookup (or, for `freezeRow`/`freezeCol`, a full
+    // `getCols()` blot-tree traversal) internally.
+    const freezeRow = tableMainBlot.freezeRow;
+    if (freezeRow > 0) {
+      const rowIds = tableMainBlot.getRowIds();
+      const frozenCells = new Set<TempSortedTableCellFormat>();
+      for (const cell of tableCells) {
+        const rowIndex = rowIds.indexOf(cell.rowId);
+        if (rowIndex !== -1 && rowIndex < freezeRow) frozenCells.add(cell);
+      }
+      if (frozenCells.size > 0) {
+        let frozenBottom = Number.NEGATIVE_INFINITY;
+        for (const cell of frozenCells) {
+          const rect = cell.domNode.getBoundingClientRect();
+          if (rect.bottom > frozenBottom) frozenBottom = rect.bottom;
+        }
+        for (const cell of tableCells) {
+          if (frozenCells.has(cell)) continue;
+          const rect = cell.domNode.getBoundingClientRect();
+          if (rect.bottom <= frozenBottom) {
+            tableCells.delete(cell);
+          }
+        }
+      }
+    }
+    const freezeCol = tableMainBlot.freezeCol;
+    if (freezeCol > 0) {
+      const colIds = tableMainBlot.getColIds();
+      const frozenColCells = new Set<TempSortedTableCellFormat>();
+      for (const cell of tableCells) {
+        const colIndex = colIds.indexOf(cell.colId);
+        if (colIndex !== -1 && colIndex < freezeCol) frozenColCells.add(cell);
+      }
+      if (frozenColCells.size > 0) {
+        let frozenRight = Number.NEGATIVE_INFINITY;
+        for (const cell of frozenColCells) {
+          const rect = cell.domNode.getBoundingClientRect();
+          if (rect.right > frozenRight) frozenRight = rect.right;
+        }
+        for (const cell of tableCells) {
+          if (frozenColCells.has(cell)) continue;
+          const rect = cell.domNode.getBoundingClientRect();
+          if (rect.right <= frozenRight) {
+            tableCells.delete(cell);
+          }
+        }
+      }
+    }
+
     const scrollDiff = this.getScrollPositionDiff();
     // set boundary to initially mouse move rectangle
     const { rect: tableRect } = getTableMainRect(tableMainBlot);
     if (!tableRect) return [];
-    const startPointX = startPoint.x + scrollDiff.x;
-    const startPointY = startPoint.y + scrollDiff.y;
+    // If the drag anchor started on a frozen row/column, its screen
+    // position never drifts on that axis due to scroll (it's sticky), so
+    // applying the scroll-diff correction there would incorrectly shift the
+    // anchor away from where the frozen band still is. The two axes are
+    // independent.
+    const startPointX = startPoint.x + (this.dragAnchorFrozenCol ? 0 : scrollDiff.x);
+    const startPointY = startPoint.y + (this.dragAnchorFrozen ? 0 : scrollDiff.y);
     let boundary = {
       x: Math.max(tableRect.left, Math.min(endPoint.x, startPointX)),
       y: Math.max(tableRect.top, Math.min(endPoint.y, startPointY)),
@@ -429,13 +493,6 @@ export class TableSelection extends TableDomSelector {
   }
 
   getScrollPositionDiff() {
-    const { x: tableScrollX, y: tableScrollY } = this.getTableViewScroll();
-    const { x: editorScrollX, y: editorScrollY } = getElementScrollPosition(this.quill.root);
-    this.selectedTableScrollX = tableScrollX;
-    this.selectedTableScrollY = tableScrollY;
-    this.selectedEditorScrollX = editorScrollX;
-    this.selectedEditorScrollY = editorScrollY;
-
     return this.startScrollRecordPosition.reduce((pre, { x, y }, i) => {
       const { x: currentX, y: currentY } = getElementScrollPosition(this.scrollRecordEls[i]);
       pre.x += x - currentX;
@@ -464,6 +521,12 @@ export class TableSelection extends TableDomSelector {
     this.setSelectionTable(closestTable);
     const startTableId = closestTable.dataset.tableId;
     const startPoint = { x: clientX, y: clientY };
+    this.dragAnchorFrozen = Boolean(
+      document.elementFromPoint(clientX, clientY)?.closest('tr')?.classList.contains('is-frozen'),
+    );
+    this.dragAnchorFrozenCol = Boolean(
+      document.elementFromPoint(clientX, clientY)?.closest('td, th')?.classList.contains('is-frozen-col'),
+    );
 
     this.recordScrollPosition();
     this.setSelectedTds(this.computeSelectedTds(startPoint, startPoint));
@@ -495,6 +558,8 @@ export class TableSelection extends TableDomSelector {
       document.body.removeEventListener('mouseup', mouseUpHandler, false);
       this.autoScroller.stop();
       this.dragging = false;
+      this.dragAnchorFrozen = false;
+      this.dragAnchorFrozenCol = false;
       this.clearRecordScrollPosition();
     };
 
@@ -504,7 +569,13 @@ export class TableSelection extends TableDomSelector {
     if (!tableMain) return;
     const tableWrapper = tableMain.parent!.domNode as HTMLElement;
     this.autoScroller.updateMousePosition(clientX, clientY);
-    this.autoScroller.start(tableWrapper);
+    // re-run hit testing on every auto-scroll tick (not just on `mousemove`),
+    // using the last known mouse position, so the selection keeps growing
+    // while the user holds the mouse near an edge without moving it further.
+    this.autoScroller.start(tableWrapper, () => {
+      this.setSelectedTds(this.computeSelectedTds(startPoint, { x: this.autoScroller.mouseX, y: this.autoScroller.mouseY }));
+      this.update();
+    });
   }
 
   updateWithSelectedTds() {
@@ -531,22 +602,71 @@ export class TableSelection extends TableDomSelector {
     }
   }
 
+  // Recompute the boundary fresh from each selected cell's *current* rect,
+  // instead of translating a cached boundary by a scroll delta. Sticky
+  // (frozen) cells and normal cells move independently on scroll, so a
+  // single "how much did everything shift" delta can't correctly track
+  // both at once — reading live rects handles both without special-casing.
+  recomputeBoundaryFromSelectedTds() {
+    if (this.selectedTds.length <= 0 || !this.table) return;
+
+    // A selected non-frozen cell may have scrolled to a position hidden
+    // underneath the frozen band (or beyond it entirely) — its rect is still
+    // geometrically well-defined but visually invisible there. Clamp such a
+    // cell's contribution to the frozen band's own far edge (always
+    // accurate, since frozen rows/columns are genuinely visible wherever
+    // they render) so it can't pull the bounding box outside where content
+    // is actually visible. Frozen cells themselves are never clamped on the
+    // axis they're frozen on — their rect there is always their true,
+    // currently-visible position. Both axes are independent.
+    let frozenBottom = Number.NEGATIVE_INFINITY;
+    for (const row of Array.from(this.table.querySelectorAll('tr.is-frozen'))) {
+      const rect = row.getBoundingClientRect();
+      if (rect.bottom > frozenBottom) frozenBottom = rect.bottom;
+    }
+    let frozenRight = Number.NEGATIVE_INFINITY;
+    for (const cell of Array.from(this.table.querySelectorAll('.is-frozen-col'))) {
+      const rect = cell.getBoundingClientRect();
+      if (rect.right > frozenRight) frozenRight = rect.right;
+    }
+
+    const startPoint = { x: Infinity, y: Infinity };
+    const endPoint = { x: -Infinity, y: -Infinity };
+    for (const cell of this.selectedTds) {
+      const td = cell.parent;
+      const rect = td.domNode.getBoundingClientRect();
+      const top = cell.isFrozenRow ? rect.top : Math.max(rect.top, frozenBottom);
+      const left = cell.isFrozenCol ? rect.left : Math.max(rect.left, frozenRight);
+      startPoint.x = Math.min(startPoint.x, left);
+      startPoint.y = Math.min(startPoint.y, top);
+      endPoint.x = Math.max(endPoint.x, rect.right);
+      endPoint.y = Math.max(endPoint.y, rect.bottom);
+    }
+    this.boundary = getRelativeRect({
+      x: startPoint.x,
+      y: startPoint.y,
+      width: endPoint.x - startPoint.x,
+      height: endPoint.y - startPoint.y,
+    }, this.quill.root);
+  }
+
   update() {
     if (!this.table) {
       this.hide();
       return;
     }
-    if (this.selectedTds.length === 0 || !this.boundary) return;
+    if (this.selectedTds.length === 0) return;
+    this.recomputeBoundaryFromSelectedTds();
+    if (!this.boundary) return;
     const { x: editorScrollX, y: editorScrollY } = getElementScrollPosition(this.quill.root);
-    const { x: tableScrollX, y: tableScrollY } = this.getTableViewScroll();
     const tableWrapperRect = this.table.parentElement!.getBoundingClientRect();
     const rootRect = this.quill.root.getBoundingClientRect();
     const wrapLeft = tableWrapperRect.x - rootRect.x;
     const wrapTop = tableWrapperRect.y - rootRect.y;
 
     Object.assign(this.cellSelect.style, {
-      left: `${this.selectedEditorScrollX * 2 - editorScrollX + this.boundary.x + this.selectedTableScrollX - tableScrollX - wrapLeft}px`,
-      top: `${this.selectedEditorScrollY * 2 - editorScrollY + this.boundary.y + this.selectedTableScrollY - tableScrollY - wrapTop}px`,
+      left: `${this.boundary.x + editorScrollX - wrapLeft}px`,
+      top: `${this.boundary.y + editorScrollY - wrapTop}px`,
       width: `${this.boundary.width}px`,
       height: `${this.boundary.height}px`,
     });
@@ -557,16 +677,6 @@ export class TableSelection extends TableDomSelector {
       height: `${tableWrapperRect.height}px`,
     });
     this.quill.emitter.emit(tableUpEvent.TABLE_SELECTION_DISPLAY_CHANGE, this);
-  }
-
-  getTableViewScroll() {
-    if (!this.table) {
-      return {
-        x: 0,
-        y: 0,
-      };
-    }
-    return getElementScrollPosition(this.table.parentElement!);
   }
 
   setSelectionTable(table: HTMLTableElement | undefined) {

@@ -1,13 +1,16 @@
-import type { TableCellInnerFormat, TableMainFormat } from '../../formats';
+import type { TableMainFormat } from '../../formats';
 import type { TableUp } from '../../table-up';
 import type { Tool } from '../../utils';
 import Quill from 'quill';
+import { TableCellInnerFormat } from '../../formats';
 import AutoFull from '../../svg/auto-full.svg';
 import Background from '../../svg/background.svg';
 import Border from '../../svg/border.svg';
 import ConvertCell from '../../svg/convert-cell.svg';
 import Copy from '../../svg/copy.svg';
 import Cut from '../../svg/cut.svg';
+import FreezeColumn from '../../svg/freeze-column.svg';
+import FreezeRow from '../../svg/freeze-row.svg';
 import InsertBottom from '../../svg/insert-bottom.svg';
 import InsertLeft from '../../svg/insert-left.svg';
 import InsertRight from '../../svg/insert-right.svg';
@@ -18,6 +21,8 @@ import RemoveRow from '../../svg/remove-row.svg';
 import RemoveTable from '../../svg/remove-table.svg';
 import SplitCell from '../../svg/split-cell.svg';
 import TableHead from '../../svg/table-head.svg';
+import UnfreezeColumn from '../../svg/unfreeze-column.svg';
+import UnfreezeRow from '../../svg/unfreeze-row.svg';
 import { blotName, createBEM } from '../../utils';
 
 export const menuColorSelectClassName = 'color-selector';
@@ -30,6 +35,48 @@ export async function copyCell(tableModule: TableUp, selectedTds: TableCellInner
     'text/html': new Blob([html], { type: 'text/html' }),
   });
   await navigator.clipboard.write([clipboardItem]);
+}
+export function computeFreezeRowBoundary(tableBlot: TableMainFormat, selectedTds: TableCellInnerFormat[]): number {
+  let boundary = 0;
+  for (const cell of selectedTds) {
+    const endRowIndex = cell.getRowIndex() + cell.rowspan - 1;
+    if (endRowIndex + 1 > boundary) boundary = endRowIndex + 1;
+  }
+  // snap past any rowspan cell (selected or not) that straddles the boundary
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const cell of tableBlot.descendants(TableCellInnerFormat)) {
+      const startRowIndex = cell.getRowIndex();
+      const endRowIndex = startRowIndex + cell.rowspan - 1;
+      if (startRowIndex < boundary && endRowIndex >= boundary) {
+        boundary = endRowIndex + 1;
+        changed = true;
+      }
+    }
+  }
+  return boundary;
+}
+export function computeFreezeColBoundary(tableBlot: TableMainFormat, selectedTds: TableCellInnerFormat[]): number {
+  let boundary = 0;
+  for (const cell of selectedTds) {
+    const endColIndex = cell.getColumnIndex() + cell.colspan - 1;
+    if (endColIndex + 1 > boundary) boundary = endColIndex + 1;
+  }
+  // snap past any colspan cell (selected or not) that straddles the boundary
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const cell of tableBlot.descendants(TableCellInnerFormat)) {
+      const startColIndex = cell.getColumnIndex();
+      const endColIndex = startColIndex + cell.colspan - 1;
+      if (startColIndex < boundary && endColIndex >= boundary) {
+        boundary = endColIndex + 1;
+        changed = true;
+      }
+    }
+  }
+  return boundary;
 }
 export const tableMenuTools: Record<string, Tool> = {
   Break: {
@@ -207,6 +254,56 @@ export const tableMenuTools: Record<string, Tool> = {
       if (!tableMainBlot) return;
 
       tableModule.convertTableBodyByCells(tableMainBlot, selectedTds, 'tfoot');
+    },
+  },
+  FreezeRow: {
+    name: 'FreezeRow',
+    icon: FreezeRow,
+    tip: 'Freeze to this row',
+    handle(tableModule, selectedTds) {
+      if (!this.table || selectedTds.length === 0) return;
+      const tableMainBlot = Quill.find(this.table) as TableMainFormat;
+      if (!tableMainBlot) return;
+
+      const boundary = computeFreezeRowBoundary(tableMainBlot, selectedTds);
+      tableMainBlot.setFreezeRow(boundary);
+    },
+  },
+  UnfreezeRow: {
+    name: 'UnfreezeRow',
+    icon: UnfreezeRow,
+    tip: 'Unfreeze',
+    handle() {
+      if (!this.table) return;
+      const tableMainBlot = Quill.find(this.table) as TableMainFormat;
+      if (!tableMainBlot) return;
+
+      tableMainBlot.setFreezeRow(0);
+    },
+  },
+  FreezeCol: {
+    name: 'FreezeCol',
+    icon: FreezeColumn,
+    tip: 'Freeze to this column',
+    handle(tableModule, selectedTds) {
+      if (!this.table || selectedTds.length === 0) return;
+      const tableMainBlot = Quill.find(this.table) as TableMainFormat;
+      if (!tableMainBlot) return;
+
+      const boundary = computeFreezeColBoundary(tableMainBlot, selectedTds);
+      tableMainBlot.setFreezeCol(boundary);
+    },
+  },
+  UnfreezeCol: {
+    name: 'UnfreezeCol',
+    icon: UnfreezeColumn,
+    tip: 'Unfreeze column',
+    handle() {
+      if (!this.table) return;
+      const tableMainBlot = Quill.find(this.table) as TableMainFormat;
+      if (!tableMainBlot) return;
+
+      tableMainBlot.setFreezeCol(0);
     },
   },
 };

@@ -328,6 +328,7 @@ export class TableUp {
     this.listenEditableChange();
     this.quillHack();
     this.listenBalanceCells();
+    this.listenFreezeResize();
   }
 
   initialContainer() {
@@ -412,6 +413,10 @@ export class TableUp {
       DeleteTable: 'Delete table',
       BackgroundColor: 'Set background color',
       BorderColor: 'Set border color',
+      FreezeRow: 'Freeze to this row',
+      UnfreezeRow: 'Unfreeze',
+      FreezeCol: 'Freeze to this column',
+      UnfreezeCol: 'Unfreeze column',
     };
     if (isFunction(options)) {
       const textGetter = options;
@@ -1073,6 +1078,25 @@ export class TableUp {
     );
   }
 
+  listenFreezeResize() {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleUpdate = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        for (const tableBlot of this.quill.scroll.descendants(TableMainFormat)) {
+          if (tableBlot.freezeRow > 0) {
+            tableBlot.updateFreezeRows(true);
+          }
+          if (tableBlot.freezeCol > 0) {
+            tableBlot.updateFreezeCols();
+          }
+        }
+      }, 150);
+    };
+    this.quill.on(Quill.events.TEXT_CHANGE, scheduleUpdate);
+    this.quill.on(tableUpEvent.AFTER_TABLE_RESIZE, scheduleUpdate);
+  }
+
   deleteTable(selectedTds: TableCellInnerFormat[]) {
     if (selectedTds.length === 0) return;
     const tableBlot = findParentBlot(selectedTds[0], blotName.tableMain);
@@ -1118,6 +1142,8 @@ export class TableUp {
         colId: newColId,
         width: tableBlot.full ? 6 : 160,
         full: tableBlot.full,
+        freezeRow: tableBlot.freezeRow,
+        freezeCol: tableBlot.freezeCol,
       });
     }
 

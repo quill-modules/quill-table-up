@@ -241,6 +241,18 @@ export class TableCellFormat extends ContainerFormat {
     return table.getColIds().indexOf(this.colId);
   }
 
+  get isFrozenRow(): boolean {
+    const tableMain = findParentBlot(this, blotName.tableMain);
+    const rowIndex = tableMain.getRowIds().indexOf(this.rowId);
+    return rowIndex !== -1 && rowIndex < tableMain.freezeRow;
+  }
+
+  get isFrozenCol(): boolean {
+    const tableMain = findParentBlot(this, blotName.tableMain);
+    const colIndex = this.getColumnIndex();
+    return colIndex !== -1 && colIndex < tableMain.freezeCol;
+  }
+
   getCellInner() {
     return this.children.head as TableCellInnerFormat;
   }

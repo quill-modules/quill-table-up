@@ -86,6 +86,8 @@ export interface TableColValue {
   width: number;
   full?: boolean;
   align?: string;
+  freezeRow?: number;
+  freezeCol?: number;
 }
 export type TableBodyTag = 'thead' | 'tbody' | 'tfoot';
 export interface TableCellValue {

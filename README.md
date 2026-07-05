@@ -110,6 +110,10 @@ const defaultTexts = {
   DeleteTable: 'Delete table',
   BackgroundColor: 'Set background color',
   BorderColor: 'Set border color',
+  FreezeRow: 'Freeze to this row',
+  UnfreezeRow: 'Unfreeze',
+  FreezeCol: 'Freeze to this column',
+  UnfreezeCol: 'Unfreeze column',
   SwitchWidth: 'Switch table width',
   InsertCaption: 'Insert table caption',
   ToggleTdBetweenTh: 'Toggle td between th',
@@ -301,6 +305,30 @@ const tableMenuTools: Record<string, Tool> = {
     key: 'border-color',
     handle: (tableModule, selectedTds, color) => {},
   },
+  FreezeRow: {
+    name: 'FreezeRow',
+    icon: FreezeRow,
+    tip: 'Freeze to this row',
+    handle: (tableModule, selectedTds) => {},
+  },
+  UnfreezeRow: {
+    name: 'UnfreezeRow',
+    icon: UnfreezeRow,
+    tip: 'Unfreeze',
+    handle: (tableModule) => {},
+  },
+  FreezeCol: {
+    name: 'FreezeCol',
+    icon: FreezeColumn,
+    tip: 'Freeze to this column',
+    handle: (tableModule, selectedTds) => {},
+  },
+  UnfreezeCol: {
+    name: 'UnfreezeCol',
+    icon: UnfreezeColumn,
+    tip: 'Unfreeze column',
+    handle: (tableModule) => {},
+  },
   SwitchWidth: {
     name: 'SwitchWidth',
     icon: AutoFull,
@@ -347,6 +375,11 @@ const defaultTools = [
   tableMenuTools.Break,
   tableMenuTools.BackgroundColor,
   tableMenuTools.BorderColor,
+  tableMenuTools.Break,
+  tableMenuTools.FreezeRow,
+  tableMenuTools.UnfreezeRow,
+  tableMenuTools.FreezeCol,
+  tableMenuTools.UnfreezeCol,
 ];
 ```
 
@@ -370,6 +403,27 @@ The table alignment tool
 ### TableVirtualScrollbar
 
 The table virtual scrollbar
+
+### Freeze Row / Freeze Column
+
+For "Freeze to this row" to visually stick while scrolling, `.ql-table-wrapper` needs to be the element that actually scrolls — give it a bounded height and vertical overflow:
+
+```css
+.ql-editor .ql-table-wrapper {
+  max-height: 400px;
+  overflow-y: auto;
+}
+```
+
+Without this, `.ql-table-wrapper`'s own `overflow: auto` (used for horizontal scrolling of wide tables) still becomes the sticky containing block for frozen rows, but since it has no bounded height it never scrolls vertically itself — so frozen rows won't stick when the surrounding page/editor scrolls instead.
+
+**Known limitation**: the combined height of the frozen rows should not exceed `.ql-table-wrapper`'s visible height. If it does, scrolling to the very bottom will cause the frozen rows to visually overlap each other — this is standard `position: sticky` behavior when multiple stacked sticky elements' combined height exceeds the scrollable viewport, not a bug specific to this plugin, and there is no known CSS-only workaround (a bottom spacer only helps for intermediate scroll positions — scrolling all the way to the bottom still triggers it, regardless of spacer size).
+
+The same requirement applies horizontally for "Freeze to this column": `.ql-table-wrapper` already has `overflow: auto` by default (for horizontal scrolling of wide tables), so frozen columns work out of the box as long as the table is actually wider than its wrapper.
+
+**Known limitation**: the combined width of the frozen columns should not exceed `.ql-table-wrapper`'s visible width — the same class of limitation as frozen rows, mirrored horizontally (standard `position: sticky` behavior when multiple stacked sticky elements' combined size exceeds the scrollable viewport).
+
+Local-selection copy/paste (copying a few cells rather than the whole table) does not currently preserve frozen row/column state — `isFrozenRow`/`isFrozenCol` are computed at render time from the table's `freezeRow`/`freezeCol`, not persisted per cell.
 
 ## Migrate to 3.x
 
