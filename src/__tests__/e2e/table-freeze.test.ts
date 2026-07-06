@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
-import { createTableBySelect } from './utils';
+import { expect } from '@playwright/test';
+import { createTableBySelect, extendTest as test } from './utils';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('http://127.0.0.1:5500/docs/test.html');

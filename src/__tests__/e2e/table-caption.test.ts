@@ -1,12 +1,12 @@
-import { expect, test } from '@playwright/test';
-import { extendTest } from './utils';
+import { expect } from '@playwright/test';
+import { extendTest as test } from './utils';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('http://127.0.0.1:5500/docs/test.html');
   page.locator('.ql-container.ql-snow');
 });
 
-extendTest('tableCaption switch visiable', async ({ page, editorPage }) => {
+test('tableCaption switch visiable', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\nTable Caption' },
@@ -47,7 +47,7 @@ extendTest('tableCaption switch visiable', async ({ page, editorPage }) => {
   await expect(captionSwitch).not.toBeVisible();
 });
 
-extendTest('text tableCaption insert', async ({ page, editorPage }) => {
+test('text tableCaption insert', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\n' },
@@ -88,7 +88,7 @@ extendTest('text tableCaption insert', async ({ page, editorPage }) => {
   expect(captionBox.y).toBeLessThan(tbodyBox.y);
 });
 
-extendTest('tableCaption side switch', async ({ page, editorPage }) => {
+test('tableCaption side switch', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\nTable Caption' },

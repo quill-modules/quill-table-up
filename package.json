@@ -69,6 +69,7 @@
     "gulp-less": "^5.0.0",
     "gulp-postcss": "^10.0.0",
     "jsdom": "^29.1.1",
+    "monocart-coverage-reports": "^2.12.12",
     "open": "^11.0.0",
     "parchment": "^3.0.0",
     "postcss-pxtorem": "^6.1.0",

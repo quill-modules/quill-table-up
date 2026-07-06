@@ -1,12 +1,12 @@
-import { expect, test } from '@playwright/test';
-import { createTableBySelect, extendTest } from './utils';
+import { expect } from '@playwright/test';
+import { createTableBySelect, extendTest as test } from './utils';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('http://127.0.0.1:5500/docs/test.html');
   page.locator('.ql-container.ql-snow');
 });
 
-extendTest('test TableAlign should functional', async ({ page }) => {
+test('test TableAlign should functional', async ({ page }) => {
   await createTableBySelect(page, 'container1', 3, 3);
   const centerCell = page.locator('#editor1').getByRole('cell').nth(4);
   await centerCell.click();
@@ -36,7 +36,7 @@ extendTest('test TableAlign should functional', async ({ page }) => {
   await expect(table).toHaveCSS('margin-right', '200px');
 });
 
-extendTest('test TableAlign should update after resize', async ({ page }) => {
+test('test TableAlign should update after resize', async ({ page }) => {
   await createTableBySelect(page, 'container1', 3, 3);
   const centerCell = page.locator('#editor1').getByRole('cell').nth(4);
   await centerCell.click();
@@ -63,7 +63,7 @@ extendTest('test TableAlign should update after resize', async ({ page }) => {
   expect(newAlignToolbarBoundingBox.y - alignToolbarBoundingBox.y).toBeCloseTo(200, -1);
 });
 
-extendTest('test TableAlign should update when text change', async ({ page, editorPage }) => {
+test('test TableAlign should update when text change', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\n' },

@@ -10,7 +10,7 @@ export default defineConfig({
     include: ['**/__tests__/unit/*.{test,spec}.ts'],
     exclude: ['**/dits/**', '**/node_modules/**'],
     coverage: {
-      reportsDirectory: resolve(__dirname, 'coverage'),
+      reportsDirectory: resolve(__dirname, 'coverage', 'unit'),
       reporter: ['html'],
       enabled: true,
     },

@@ -1,6 +1,6 @@
 import type { Locator } from '@playwright/test';
-import { expect, test } from '@playwright/test';
-import { createTableBySelect, extendTest } from './utils';
+import { expect } from '@playwright/test';
+import { createTableBySelect, extendTest as test } from './utils';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('http://127.0.0.1:5500/docs/test.html');
@@ -38,7 +38,7 @@ test('test TableScrollbar', async ({ page }) => {
   expect(await page.locator('#editor2 .table-up-scrollbar.is-horizontal').isVisible()).toBeTruthy();
 });
 
-extendTest('test TableScrollbar should update when text change', async ({ page, editorPage }) => {
+test('test TableScrollbar should update when text change', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\n' },
@@ -71,7 +71,7 @@ extendTest('test TableScrollbar should update when text change', async ({ page, 
   expect(newScrollbarTop - scrollbarTop).toBeCloseTo(lineBound.height, 0);
 });
 
-extendTest('test TableScrollbar should not effect selection', async ({ page, editorPage }) => {
+test('test TableScrollbar should not effect selection', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\n' },
@@ -108,7 +108,7 @@ extendTest('test TableScrollbar should not effect selection', async ({ page, edi
   })).toBe(true);
 });
 
-extendTest('scrollbar should be no offset when container have padding', async ({ page, editorPage, browserName }) => {
+test('scrollbar should be no offset when container have padding', async ({ page, editorPage, browserName }) => {
   editorPage.index = 4;
   await editorPage.setContents([
     { insert: '\n' },
