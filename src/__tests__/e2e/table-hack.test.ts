@@ -1,12 +1,12 @@
-import { expect, test } from '@playwright/test';
-import { extendTest } from './utils';
+import { expect } from '@playwright/test';
+import { extendTest as test } from './utils';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('http://127.0.0.1:5500/docs/test.html');
   page.locator('.ql-container.ql-snow');
 });
 
-extendTest('clean handler should not clean insert text format', async ({ page, editorPage }) => {
+test('clean handler should not clean insert text format', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\n' },
@@ -53,7 +53,7 @@ extendTest('clean handler should not clean insert text format', async ({ page, e
   }
 });
 
-extendTest('clean handler should not keep table format when have two empty line after block format(like header)', async ({ page, editorPage }) => {
+test('clean handler should not keep table format when have two empty line after block format(like header)', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\n' },
@@ -74,7 +74,7 @@ extendTest('clean handler should not keep table format when have two empty line 
   expect(await editorPage.getSelection()).toEqual({ index: 0, length: 10 });
 });
 
-extendTest('toolbar item handler should trigger source USER', async ({ page, editorPage }) => {
+test('toolbar item handler should trigger source USER', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\n' },
@@ -107,7 +107,7 @@ extendTest('toolbar item handler should trigger source USER', async ({ page, edi
   expect(result).toBe('user');
 });
 
-extendTest('getSemanticHTML should not effect editable when manual copy or cut', async ({ page, editorPage }) => {
+test('getSemanticHTML should not effect editable when manual copy or cut', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\nTable Caption' },

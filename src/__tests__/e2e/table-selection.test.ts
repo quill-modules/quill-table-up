@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
-import { createTableBySelect, extendTest } from './utils';
+import { expect } from '@playwright/test';
+import { createTableBySelect, extendTest as test } from './utils';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('http://127.0.0.1:5500/docs/test.html');
@@ -131,7 +131,7 @@ test('test TableSelection set format header', async ({ page }) => {
   expect(await page.locator('#editor1 .ql-table-cell-inner h1').count()).toBe(4);
 });
 
-extendTest('test TableSelection set multiple format', async ({ page, editorPage }) => {
+test('test TableSelection set multiple format', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\n' },
@@ -199,7 +199,7 @@ test('test TableSelection clean format', async ({ page }) => {
   expect(await cleanEl.count()).toBe(0);
 });
 
-extendTest('test TableSelection set format in part of cell text', async ({ page, editorPage }) => {
+test('test TableSelection set format in part of cell text', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\n' },
@@ -246,7 +246,7 @@ extendTest('test TableSelection set format in part of cell text', async ({ page,
   expect(await page.locator('#editor1 .ql-table-cell-inner em').count()).toBe(2);
 });
 
-extendTest('test TableSelection should update when text change', async ({ page, editorPage }) => {
+test('test TableSelection should update when text change', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await createTableBySelect(page, 'container1', 3, 3);
 
@@ -267,7 +267,7 @@ extendTest('test TableSelection should update when text change', async ({ page, 
   expect(newSelectionWrapper.y - selectionBound.y).toBeCloseTo(lineBound.height, 5);
 });
 
-extendTest('test TableSelection should hide if selectedTds no longer in page', async ({ page, editorPage }) => {
+test('test TableSelection should hide if selectedTds no longer in page', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await createTableBySelect(page, 'container1', 3, 3);
   await page.waitForTimeout(1000);
@@ -299,7 +299,7 @@ extendTest('test TableSelection should hide if selectedTds no longer in page', a
   await expect(page.locator('#container1 .table-up-selection .table-up-selection__line')).not.toBeVisible();
 });
 
-extendTest('test TableSelection should update when table resize', async ({ page, editorPage }) => {
+test('test TableSelection should update when table resize', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await createTableBySelect(page, 'container1', 3, 3);
 
@@ -323,7 +323,7 @@ extendTest('test TableSelection should update when table resize', async ({ page,
   expect(newSelectionBound.width).toBeCloseTo(selectionBound.width + 100, 5);
 });
 
-extendTest('table resize should update TableSelection', async ({ page, editorPage }) => {
+test('table resize should update TableSelection', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await createTableBySelect(page, 'container1', 3, 3);
 
@@ -347,7 +347,7 @@ extendTest('table resize should update TableSelection', async ({ page, editorPag
   expect(newThirdCellSelectionBound).toEqual(newCellBound);
 });
 
-extendTest('selection should be no offset when container have padding', async ({ page, editorPage }) => {
+test('selection should be no offset when container have padding', async ({ page, editorPage }) => {
   editorPage.index = 4;
   await editorPage.setContents([
     { insert: '\n' },
@@ -377,7 +377,7 @@ extendTest('selection should be no offset when container have padding', async ({
   expect(tableBounding.y).toBe(selectionBounding.y);
 });
 
-extendTest('toolbox bounds should same with quill.root', async ({ page, editorPage }) => {
+test('toolbox bounds should same with quill.root', async ({ page, editorPage }) => {
   editorPage.index = 4;
   const toolbox = page.locator('#editor5 .table-up-toolbox').nth(0);
   const quillRoot = page.locator('#editor5 .ql-editor').nth(0);
@@ -408,7 +408,7 @@ extendTest('toolbox bounds should same with quill.root', async ({ page, editorPa
   expect(toolboxBoundingAfter).toEqual(quillRootBoundingAfter);
 });
 
-extendTest('TableSelection should not update when input composition', async ({ page, editorPage }) => {
+test('TableSelection should not update when input composition', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await createTableBySelect(page, 'container1', 3, 3);
 
@@ -425,7 +425,7 @@ extendTest('TableSelection should not update when input composition', async ({ p
   expect(composingBounding).toEqual(bounding);
 });
 
-extendTest('TableSelection should allow text selection when editor is not editable', async ({ page, editorPage }) => {
+test('TableSelection should allow text selection when editor is not editable', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\n' },
@@ -473,8 +473,8 @@ extendTest('TableSelection should allow text selection when editor is not editab
   expect(selectedText).toContain('Test');
 });
 
-extendTest.describe('TableSelection should work correct when wrapper scroll', () => {
-  extendTest('TableSelection in quill root scroll', async ({ page, editorPage }) => {
+test.describe('TableSelection should work correct when wrapper scroll', () => {
+  test('TableSelection in quill root scroll', async ({ page, editorPage }) => {
     editorPage.index = 0;
     await editorPage.setContents([
       { insert: '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n' },
@@ -542,7 +542,7 @@ extendTest.describe('TableSelection should work correct when wrapper scroll', ()
     expect(selectedTds.length).toBe(9);
   });
 
-  extendTest('TableSelection in body scroll', async ({ page, editorPage }) => {
+  test('TableSelection in body scroll', async ({ page, editorPage }) => {
     editorPage.index = 4;
     await editorPage.setContents([
       { insert: '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n' },

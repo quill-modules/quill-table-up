@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
-import { createTableBySelect, extendTest } from './utils';
+import { expect } from '@playwright/test';
+import { createTableBySelect, extendTest as test } from './utils';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('http://127.0.0.1:5500/docs/test.html');
@@ -142,7 +142,7 @@ test('test TableResizeBox position', async ({ page }) => {
   expect(firstCellBounding.y).toEqual(toolBounding.y);
 });
 
-extendTest('TableResize on full width should not outer 100%', async ({ page, editorPage }) => {
+test('TableResize on full width should not outer 100%', async ({ page, editorPage }) => {
   editorPage.index = 3;
   await createTableBySelect(page, 'container4', 3, 7);
 
@@ -169,8 +169,8 @@ extendTest('TableResize on full width should not outer 100%', async ({ page, edi
   expect(width).toBeCloseTo(100, 2);
 });
 
-extendTest.describe('TableResizeScale functional', () => {
-  extendTest('test TableResizeScale functional', async ({ page }) => {
+test.describe('TableResizeScale functional', () => {
+  test('test TableResizeScale functional', async ({ page }) => {
     await createTableBySelect(page, 'container1', 3, 3);
     const centerCell = page.locator('#editor1').getByRole('cell').nth(4);
     await centerCell.click();
@@ -193,7 +193,7 @@ extendTest.describe('TableResizeScale functional', () => {
     }
   });
 
-  extendTest('test TableResizeBox and TableResizeScale should update when text change', async ({ page, editorPage }) => {
+  test('test TableResizeBox and TableResizeScale should update when text change', async ({ page, editorPage }) => {
     editorPage.index = 1;
     await createTableBySelect(page, 'container2', 3, 3);
 
@@ -227,7 +227,7 @@ extendTest.describe('TableResizeScale functional', () => {
     expect(newBoxTop).toBeCloseTo(boxTop + lineBound.height * 2, 4);
   });
 
-  extendTest('test TableResizeScale should hide when table width switch full', async ({ page }) => {
+  test('test TableResizeScale should hide when table width switch full', async ({ page }) => {
     await createTableBySelect(page, 'container1', 3, 3);
 
     const cell = page.locator('#editor1 .ql-editor .ql-table td').nth(0);
@@ -239,7 +239,7 @@ extendTest.describe('TableResizeScale functional', () => {
     await expect(page.locator('#container1 .table-up-scale')).not.toBeVisible();
   });
 
-  extendTest('TableResizeScale block should scroll with table wrapper', async ({ page, editorPage }) => {
+  test('TableResizeScale block should scroll with table wrapper', async ({ page, editorPage }) => {
     editorPage.index = 0;
     await editorPage.setContents([
       { insert: '\n' },
@@ -289,7 +289,7 @@ extendTest.describe('TableResizeScale functional', () => {
   });
 });
 
-extendTest('test TableResizeBox head click and shift click (column)', async ({ page }) => {
+test('test TableResizeBox head click and shift click (column)', async ({ page }) => {
   await createTableBySelect(page, 'container2', 3, 3);
 
   const firstCell = page.locator('#editor2').getByRole('cell').nth(0);
@@ -315,7 +315,7 @@ extendTest('test TableResizeBox head click and shift click (column)', async ({ p
   expect(selectionBounding2.width).toBe(tableBounding.width - 1);
 });
 
-extendTest('test TableResizeBox head click and shift click (row)', async ({ page }) => {
+test('test TableResizeBox head click and shift click (row)', async ({ page }) => {
   await createTableBySelect(page, 'container2', 3, 3);
 
   const firstCell = page.locator('#editor2').getByRole('cell').nth(0);
@@ -341,7 +341,7 @@ extendTest('test TableResizeBox head click and shift click (row)', async ({ page
   expect(selectionBounding2.width).toBe(tableBounding.width - 1);
 });
 
-extendTest('test TableResizeBox head click and shift click (row mixin column)', async ({ page }) => {
+test('test TableResizeBox head click and shift click (row mixin column)', async ({ page }) => {
   await createTableBySelect(page, 'container2', 3, 3);
   const firstCell = page.locator('#editor2').getByRole('cell').nth(0);
   await firstCell.click();
@@ -359,7 +359,7 @@ extendTest('test TableResizeBox head click and shift click (row mixin column)', 
   expect(selectionBounding.width).toBe(cellBounding.width * 2);
 });
 
-extendTest('test TableResizeBox head click and shift click (scroll table wrapper)', async ({ page, editorPage }) => {
+test('test TableResizeBox head click and shift click (scroll table wrapper)', async ({ page, editorPage }) => {
   editorPage.index = 1;
   editorPage.setContents([
     { insert: '\n' },
@@ -402,8 +402,8 @@ extendTest('test TableResizeBox head click and shift click (scroll table wrapper
   expect(selectionBounding.width).toBe(cellBounding.width * 3);
 });
 
-extendTest.describe('TableResizeBox drag content', () => {
-  extendTest('drag column', async ({ page, editorPage }) => {
+test.describe('TableResizeBox drag content', () => {
+  test('drag column', async ({ page, editorPage }) => {
     editorPage.index = 1;
     await editorPage.setContents([
       { insert: '\n' },
@@ -538,7 +538,7 @@ extendTest.describe('TableResizeBox drag content', () => {
     ]);
   });
 
-  extendTest('drag multiple column', async ({ page, editorPage }) => {
+  test('drag multiple column', async ({ page, editorPage }) => {
     editorPage.index = 1;
     await editorPage.setContents([
       { insert: '\n' },
@@ -681,7 +681,7 @@ extendTest.describe('TableResizeBox drag content', () => {
     ]);
   });
 
-  extendTest('drag row', async ({ page, editorPage }) => {
+  test('drag row', async ({ page, editorPage }) => {
     editorPage.index = 1;
     await editorPage.setContents([
       { insert: '\n' },
@@ -816,7 +816,7 @@ extendTest.describe('TableResizeBox drag content', () => {
     ]);
   });
 
-  extendTest('drag multiple row', async ({ page, editorPage }) => {
+  test('drag multiple row', async ({ page, editorPage }) => {
     editorPage.index = 1;
     await editorPage.setContents([
       { insert: '\n' },
@@ -955,7 +955,7 @@ extendTest.describe('TableResizeBox drag content', () => {
     ]);
   });
 
-  extendTest('drag include emptyRow', async ({ page, editorPage }) => {
+  test('drag include emptyRow', async ({ page, editorPage }) => {
     editorPage.index = 5;
     editorPage.setContents([
       { insert: '\n' },

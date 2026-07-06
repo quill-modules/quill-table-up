@@ -1,5 +1,7 @@
 import type { Page, PlaywrightWorkerOptions } from '@playwright/test';
 import { test } from '@playwright/test';
+import MCR from 'monocart-coverage-reports';
+import { coverageOptions } from './coverage-options';
 import { EditorPage } from './editor-page';
 
 declare global {
@@ -45,8 +47,31 @@ export async function pasteHTML(page: Page, html: string, { browserName = 'chrom
 
 export const extendTest = test.extend<{
   editorPage: EditorPage;
+  // no return value - this fixture's only job is to wrap every test in
+  // start/stop V8 coverage collection, so it's requested by nothing and
+  // must be `auto: true` to run regardless
+  autoCoverage: void;
 }>({
   editorPage: ({ page }, use) => {
     use(new EditorPage(page));
   },
+  // `page.coverage` (V8 JS coverage) is Chromium-only; Firefox has no
+  // equivalent Playwright API, so this is a no-op there
+  autoCoverage: [
+    async ({ page, browserName }, use) => {
+      const collectsCoverage = browserName === 'chromium';
+      if (collectsCoverage) {
+        await page.coverage.startJSCoverage({ resetOnNavigation: false });
+      }
+
+      await use();
+
+      if (collectsCoverage) {
+        const jsCoverage = await page.coverage.stopJSCoverage();
+        const mcr = MCR(coverageOptions);
+        await mcr.add(jsCoverage);
+      }
+    },
+    { auto: true },
+  ],
 });
