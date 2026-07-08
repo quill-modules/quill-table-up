@@ -1,2 +1,11 @@
 @namespace: table-up;
 @table-border-color: #a1a1aa;
+
+// stacking order: frozen-col < frozen-row < corner (row+col) < toolbox (selection/
+// resize/scrollbar/align) < floating menu. Each defined relative to the previous
+// so the ordering can't drift out of sync.
+@freeze-z-col: 1;
+@freeze-z-row: @freeze-z-col + 1;
+@freeze-z-corner: @freeze-z-row + 1;
+@toolbox-z-index: @freeze-z-corner + 1;
+@menu-z-index: @toolbox-z-index + 1;
