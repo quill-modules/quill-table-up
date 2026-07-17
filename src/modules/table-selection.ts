@@ -366,16 +366,25 @@ export class TableSelection extends TableDomSelector {
 
     // Sticky frozen rows/columns report their "stuck" screen rect regardless
     // of scroll position. A normal cell that happens to scroll to the same
-    // screen band reports an identical rect. Exclude those hidden duplicates
+    // screen band reports an identical (or partially overlapping) rect, since
+    // frozen content paints on top of it. Exclude those hidden duplicates
     // from hit testing using each cell's logical row/col position (not
-    // geometry) to identify the frozen band, then geometry only to find
-    // what's hidden underneath it. The two axes are independent and stack.
-    // `getRowIds`/`getColIds` (and `freezeRow`/`freezeCol`) are cached once per
-    // call here (rather than using the `isFrozenRow`/`isFrozenCol` getters per
-    // cell) because this loop runs over every cell in the table on every
-    // mousemove during drag-select, and those getters each re-run a
-    // `querySelectorAll` lookup (or, for `freezeRow`/`freezeCol`, a full
-    // `getCols()` blot-tree traversal) internally.
+    // geometry) to identify the frozen band, then geometry to find what's
+    // hidden underneath it. A cell fully behind the band is dropped; a cell
+    // only partially behind it (e.g. the column right after the frozen band,
+    // once scrolled far enough that it slides under it while still being
+    // wider than the band) has its hit-testable rect clamped to the slice
+    // that's actually visible, so a click on the frozen band can't also
+    // match that cell's hidden portion. The two axes are independent and the
+    // clamps compose (`getCellRect` returns the other axis's clamp already
+    // applied). `getRowIds`/`getColIds` (and `freezeRow`/`freezeCol`) are
+    // cached once per call here (rather than using the `isFrozenRow`/
+    // `isFrozenCol` getters per cell) because this loop runs over every cell
+    // in the table on every mousemove during drag-select, and those getters
+    // each re-run a `querySelectorAll` lookup (or, for `freezeRow`/
+    // `freezeCol`, a full `getCols()` blot-tree traversal) internally.
+    const getCellRect = (cell: TempSortedTableCellFormat) => cell.__rect ?? (cell.__rect = cell.domNode.getBoundingClientRect());
+
     const freezeRow = tableMainBlot.freezeRow;
     if (freezeRow > 0) {
       const rowIds = tableMainBlot.getRowIds();
@@ -387,14 +396,17 @@ export class TableSelection extends TableDomSelector {
       if (frozenCells.size > 0) {
         let frozenBottom = Number.NEGATIVE_INFINITY;
         for (const cell of frozenCells) {
-          const rect = cell.domNode.getBoundingClientRect();
+          const rect = getCellRect(cell);
           if (rect.bottom > frozenBottom) frozenBottom = rect.bottom;
         }
         for (const cell of tableCells) {
           if (frozenCells.has(cell)) continue;
-          const rect = cell.domNode.getBoundingClientRect();
+          const rect = getCellRect(cell);
           if (rect.bottom <= frozenBottom) {
             tableCells.delete(cell);
+          }
+          else if (rect.top < frozenBottom) {
+            cell.__rect = new DOMRect(rect.x, frozenBottom, rect.width, rect.bottom - frozenBottom);
           }
         }
       }
@@ -410,14 +422,17 @@ export class TableSelection extends TableDomSelector {
       if (frozenColCells.size > 0) {
         let frozenRight = Number.NEGATIVE_INFINITY;
         for (const cell of frozenColCells) {
-          const rect = cell.domNode.getBoundingClientRect();
+          const rect = getCellRect(cell);
           if (rect.right > frozenRight) frozenRight = rect.right;
         }
         for (const cell of tableCells) {
           if (frozenColCells.has(cell)) continue;
-          const rect = cell.domNode.getBoundingClientRect();
+          const rect = getCellRect(cell);
           if (rect.right <= frozenRight) {
             tableCells.delete(cell);
+          }
+          else if (rect.left < frozenRight) {
+            cell.__rect = new DOMRect(frozenRight, rect.y, rect.right - frozenRight, rect.height);
           }
         }
       }

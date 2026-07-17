@@ -386,6 +386,52 @@ test('drag-selecting through the frozen column band does not select a scrolled-u
   expect(selectedCount).toBe(1);
 });
 
+test('clicking a frozen column does not select a wider trailing column scrolled partially underneath it', async ({ page }) => {
+  await createTableBySelect(page, 'container1', 2, 3);
+
+  // column 2 is wider than the combined frozen band, so once scrolled it can
+  // straddle the frozen band's right edge instead of being fully hidden by it
+  await page.evaluate(() => {
+    const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
+    const cols = tableMainBlot.getCols();
+    cols[0].width = 80;
+    cols[1].width = 80;
+    cols[2].width = 150;
+  });
+  await page.evaluate(() => {
+    const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
+    tableMainBlot.setFreezeCol(2);
+  });
+  await page.evaluate(() => {
+    const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
+    wrapper.style.maxWidth = '200px';
+  });
+
+  // scroll so column 2's screen rect straddles the frozen band's right edge
+  // (160px): its left slides to 60px (under the frozen band) while its right
+  // stays at 210px (past it) — neither fully hidden nor fully visible
+  await page.evaluate(() => {
+    const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
+    wrapper.scrollLeft = 100;
+  });
+
+  const table = page.locator('#editor1 .ql-table');
+  const secondFrozenCell = table.locator('.is-frozen-col').nth(1);
+  const box = (await secondFrozenCell.boundingBox())!;
+
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+
+  const selectedCount = await page.evaluate(() => {
+    const tableModule = window.quills[0].getModule('table-up') as any;
+    const selection = tableModule.getModule('table-selection');
+    return selection.selectedTds.length;
+  });
+  // only the clicked frozen cell should be selected, not column 2's cell
+  // scrolled partially underneath the frozen band (or column 0, cascaded in
+  // by boundary growth)
+  expect(selectedCount).toBe(1);
+});
+
 test('corner cell (frozen row + frozen column) stays pinned in both directions while scrolling', async ({ page }) => {
   await page.locator('#container1 .ql-toolbar .ql-table-up > .ql-picker-label').first().click();
   await page.locator('#container1 .ql-toolbar .ql-table-up .ql-custom-select').getByText('Custom').click();
