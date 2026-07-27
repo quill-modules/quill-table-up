@@ -38,13 +38,13 @@ describe('table freeze row data model', () => {
 });
 
 describe('table freeze row aggregate', () => {
-  it('TableMainFormat.setFreezeRow writes freezeRow to every column and appendCol inherits it', async () => {
+  it('TableMainFormat.freezeRow setter writes freezeRow to every column and appendCol inherits it', async () => {
     const quill = await createTable(2, 2, { full: false });
     const tableModule = quill.getModule(TableUp.moduleName) as TableUp;
     const table = quill.root.querySelector('table')!;
     const tableMainBlot = Quill.find(table) as any;
 
-    tableMainBlot.setFreezeRow(1);
+    tableMainBlot.freezeRow = 1;
     expect(tableMainBlot.freezeRow).toBe(1);
     for (const col of tableMainBlot.getCols()) {
       expect(col.freezeRow).toBe(1);
@@ -102,7 +102,7 @@ it('freezeRow survives a full delta round-trip (save/reload simulation)', async 
   const quill = await createTable(3, 2, { full: false });
   const table = quill.root.querySelector('table')!;
   const tableMainBlot = Quill.find(table) as any;
-  tableMainBlot.setFreezeRow(1);
+  tableMainBlot.freezeRow = 1;
   await vi.runAllTimersAsync();
 
   const delta = quill.getContents();
@@ -140,13 +140,13 @@ describe('table freeze col data model', () => {
 });
 
 describe('table freeze col aggregate', () => {
-  it('TableMainFormat.setFreezeCol writes freezeCol to every column and appendCol inherits it', async () => {
+  it('TableMainFormat.freezeCol setter writes freezeCol to every column and appendCol inherits it', async () => {
     const quill = await createTable(2, 2, { full: false });
     const tableModule = quill.getModule(TableUp.moduleName) as TableUp;
     const table = quill.root.querySelector('table')!;
     const tableMainBlot = Quill.find(table) as any;
 
-    tableMainBlot.setFreezeCol(1);
+    tableMainBlot.freezeCol = 1;
     expect(tableMainBlot.freezeCol).toBe(1);
     for (const col of tableMainBlot.getCols()) {
       expect(col.freezeCol).toBe(1);
@@ -167,8 +167,8 @@ describe('table freeze isFrozenRow/isFrozenCol getters', () => {
     const tableModule = quill.getModule(TableUp.moduleName) as TableUp;
     const table = quill.root.querySelector('table')!;
     const tableMainBlot = Quill.find(table) as any;
-    tableMainBlot.setFreezeRow(1);
-    tableMainBlot.setFreezeCol(1);
+    tableMainBlot.freezeRow = 1;
+    tableMainBlot.freezeCol = 1;
 
     const cellInners = tableMainBlot.descendants(TableCellInnerFormat) as TableCellInnerFormat[];
     // row 0, col 0 -> both frozen (corner)
@@ -239,7 +239,7 @@ it('freezeCol survives a full delta round-trip (save/reload simulation)', async 
   const quill = await createTable(3, 3, { full: false });
   const table = quill.root.querySelector('table')!;
   const tableMainBlot = Quill.find(table) as any;
-  tableMainBlot.setFreezeCol(1);
+  tableMainBlot.freezeCol = 1;
   await vi.runAllTimersAsync();
 
   const delta = quill.getContents();

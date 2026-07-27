@@ -88,7 +88,7 @@ export class TableMainFormat extends ContainerFormat {
     return max;
   }
 
-  setFreezeRow(value: number) {
+  set freezeRow(value: number) {
     const cols = this.getCols();
     for (const col of cols) {
       col.freezeRow = value;
@@ -124,7 +124,7 @@ export class TableMainFormat extends ContainerFormat {
     return max;
   }
 
-  setFreezeCol(value: number) {
+  set freezeCol(value: number) {
     const cols = this.getCols();
     for (const col of cols) {
       col.freezeCol = value;

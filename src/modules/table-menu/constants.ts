@@ -266,7 +266,7 @@ export const tableMenuTools: Record<string, Tool> = {
       if (!tableMainBlot) return;
 
       const boundary = computeFreezeRowBoundary(tableMainBlot, selectedTds);
-      tableMainBlot.setFreezeRow(boundary);
+      tableMainBlot.freezeRow = boundary;
     },
   },
   UnfreezeRow: {
@@ -278,7 +278,7 @@ export const tableMenuTools: Record<string, Tool> = {
       const tableMainBlot = Quill.find(this.table) as TableMainFormat;
       if (!tableMainBlot) return;
 
-      tableMainBlot.setFreezeRow(0);
+      tableMainBlot.freezeRow = 0;
     },
   },
   FreezeCol: {
@@ -291,7 +291,7 @@ export const tableMenuTools: Record<string, Tool> = {
       if (!tableMainBlot) return;
 
       const boundary = computeFreezeColBoundary(tableMainBlot, selectedTds);
-      tableMainBlot.setFreezeCol(boundary);
+      tableMainBlot.freezeCol = boundary;
     },
   },
   UnfreezeCol: {
@@ -303,7 +303,7 @@ export const tableMenuTools: Record<string, Tool> = {
       const tableMainBlot = Quill.find(this.table) as TableMainFormat;
       if (!tableMainBlot) return;
 
-      tableMainBlot.setFreezeCol(0);
+      tableMainBlot.freezeCol = 0;
     },
   },
 };

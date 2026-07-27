@@ -14,7 +14,7 @@ test('freeze to row 1 sticks the first two rows at cascading top offsets', async
   // pattern already used in `table-keyboard-handler.test.ts`).
   await page.evaluate(() => {
     const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
-    tableMainBlot.setFreezeRow(2);
+    tableMainBlot.freezeRow = 2;
   });
 
   const rows = table.locator('tr');
@@ -32,7 +32,7 @@ test('typing content that grows row height re-cascades frozen row offsets after 
   await createTableBySelect(page, 'container1', 6, 2);
   await page.evaluate(() => {
     const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
-    tableMainBlot.setFreezeRow(2);
+    tableMainBlot.freezeRow = 2;
   });
 
   const table = page.locator('#editor1 .ql-table');
@@ -73,7 +73,7 @@ test('drag-selecting through the frozen band does not select a scrolled-under gh
 
   await page.evaluate(() => {
     const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
-    tableMainBlot.setFreezeRow(1);
+    tableMainBlot.freezeRow = 1;
   });
 
   // `.ql-table-wrapper` has `overflow: auto` (for horizontal scroll of wide
@@ -142,7 +142,7 @@ test('selection overlay tracks a selection spanning frozen and scrolled rows aft
   });
   await page.evaluate(() => {
     const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
-    tableMainBlot.setFreezeRow(1);
+    tableMainBlot.freezeRow = 1;
   });
   await page.evaluate(() => {
     const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
@@ -204,7 +204,7 @@ test('drag starting on a frozen cell computes the correct range across interveni
   });
   await page.evaluate(() => {
     const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
-    tableMainBlot.setFreezeRow(1);
+    tableMainBlot.freezeRow = 1;
   });
   await page.evaluate(() => {
     const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
@@ -254,7 +254,7 @@ test('freeze to column 1 sticks the first two columns at cascading left offsets'
   await table.locator('tr').first().locator('td, th').first().click();
   await page.evaluate(() => {
     const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
-    tableMainBlot.setFreezeCol(2);
+    tableMainBlot.freezeCol = 2;
   });
 
   const firstRowCells = table.locator('tr').first().locator('td, th');
@@ -272,7 +272,7 @@ test('dragging a column wider re-cascades frozen column left offsets immediately
   await createTableBySelect(page, 'container1', 3, 6);
   await page.evaluate(() => {
     const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
-    tableMainBlot.setFreezeCol(2);
+    tableMainBlot.freezeCol = 2;
   });
 
   const table = page.locator('#editor1 .ql-table');
@@ -305,7 +305,7 @@ test('freeze columns on a full-width table computes pixel offsets, not raw perce
   await page.waitForTimeout(50);
   await page.evaluate(() => {
     const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
-    tableMainBlot.setFreezeCol(2);
+    tableMainBlot.freezeCol = 2;
   });
 
   const { cell1Left, expectedLeft, tableWidth } = await page.evaluate(() => {
@@ -348,7 +348,7 @@ test('drag-selecting through the frozen column band does not select a scrolled-u
   });
   await page.evaluate(() => {
     const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
-    tableMainBlot.setFreezeCol(1);
+    tableMainBlot.freezeCol = 1;
   });
   await page.evaluate(() => {
     const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
@@ -400,7 +400,7 @@ test('clicking a frozen column does not select a wider trailing column scrolled 
   });
   await page.evaluate(() => {
     const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
-    tableMainBlot.setFreezeCol(2);
+    tableMainBlot.freezeCol = 2;
   });
   await page.evaluate(() => {
     const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
@@ -451,8 +451,8 @@ test('corner cell (frozen row + frozen column) stays pinned in both directions w
   });
   await page.evaluate(() => {
     const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
-    tableMainBlot.setFreezeRow(1);
-    tableMainBlot.setFreezeCol(1);
+    tableMainBlot.freezeRow = 1;
+    tableMainBlot.freezeCol = 1;
   });
   await page.evaluate(() => {
     const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
