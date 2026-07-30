@@ -364,41 +364,25 @@ export class TableSelection extends TableDomSelector {
       }),
     );
 
-    // Sticky frozen rows/columns report their "stuck" screen rect regardless
-    // of scroll position. A normal cell that happens to scroll to the same
-    // screen band reports an identical (or partially overlapping) rect, since
-    // frozen content paints on top of it. Exclude those hidden duplicates
-    // from hit testing using each cell's logical row/col position (not
-    // geometry) to identify the frozen band, then geometry to find what's
-    // hidden underneath it. A cell fully behind the band is dropped; a cell
-    // only partially behind it (e.g. the column right after the frozen band,
-    // once scrolled far enough that it slides under it while still being
-    // wider than the band) has its hit-testable rect clamped to the slice
-    // that's actually visible, so a click on the frozen band can't also
-    // match that cell's hidden portion. The two axes are independent and the
-    // clamps compose (`getCellRect` returns the other axis's clamp already
-    // applied). `getRowIds`/`getColIds` (and `freezeRow`/`freezeCol`) are
-    // cached once per call here (rather than using the `isFrozenRow`/
-    // `isFrozenCol` getters per cell) because this loop runs over every cell
-    // in the table on every mousemove during drag-select, and those getters
-    // each re-run a `querySelectorAll` lookup (or, for `freezeRow`/
-    // `freezeCol`, a full `getCols()` blot-tree traversal) internally.
+    // frozen cells stay sticky regardless of scroll; cells scrolled behind them share the same screen rect but are hidden.
+    // exclude fully-hidden cells and clamp partially-hidden ones to their visible slice. Cache rects per call to avoid
+    // repeated querySelectorAll / blot-tree traversals on every mousemove.
     const getCellRect = (cell: TempSortedTableCellFormat) => cell.__rect ?? (cell.__rect = cell.domNode.getBoundingClientRect());
 
     const freezeRow = tableMainBlot.freezeRow;
     if (freezeRow > 0) {
-      const rowIds = tableMainBlot.getRowIds();
+      const rowIdToIndex = new Map(tableMainBlot.getRowIds().map((id, i) => [id, i]));
       const frozenCells = new Set<TempSortedTableCellFormat>();
+      let frozenBottom = Number.NEGATIVE_INFINITY;
       for (const cell of tableCells) {
-        const rowIndex = rowIds.indexOf(cell.rowId);
-        if (rowIndex !== -1 && rowIndex < freezeRow) frozenCells.add(cell);
-      }
-      if (frozenCells.size > 0) {
-        let frozenBottom = Number.NEGATIVE_INFINITY;
-        for (const cell of frozenCells) {
+        const rowIndex = rowIdToIndex.get(cell.rowId) ?? -1;
+        if (rowIndex !== -1 && rowIndex < freezeRow) {
+          frozenCells.add(cell);
           const rect = getCellRect(cell);
           if (rect.bottom > frozenBottom) frozenBottom = rect.bottom;
         }
+      }
+      if (frozenCells.size > 0) {
         for (const cell of tableCells) {
           if (frozenCells.has(cell)) continue;
           const rect = getCellRect(cell);
@@ -413,18 +397,18 @@ export class TableSelection extends TableDomSelector {
     }
     const freezeCol = tableMainBlot.freezeCol;
     if (freezeCol > 0) {
-      const colIds = tableMainBlot.getColIds();
+      const colIdToIndex = new Map(tableMainBlot.getColIds().map((id, i) => [id, i]));
       const frozenColCells = new Set<TempSortedTableCellFormat>();
+      let frozenRight = Number.NEGATIVE_INFINITY;
       for (const cell of tableCells) {
-        const colIndex = colIds.indexOf(cell.colId);
-        if (colIndex !== -1 && colIndex < freezeCol) frozenColCells.add(cell);
-      }
-      if (frozenColCells.size > 0) {
-        let frozenRight = Number.NEGATIVE_INFINITY;
-        for (const cell of frozenColCells) {
+        const colIndex = colIdToIndex.get(cell.colId) ?? -1;
+        if (colIndex !== -1 && colIndex < freezeCol) {
+          frozenColCells.add(cell);
           const rect = getCellRect(cell);
           if (rect.right > frozenRight) frozenRight = rect.right;
         }
+      }
+      if (frozenColCells.size > 0) {
         for (const cell of tableCells) {
           if (frozenColCells.has(cell)) continue;
           const rect = getCellRect(cell);
@@ -442,11 +426,7 @@ export class TableSelection extends TableDomSelector {
     // set boundary to initially mouse move rectangle
     const { rect: tableRect } = getTableMainRect(tableMainBlot);
     if (!tableRect) return [];
-    // If the drag anchor started on a frozen row/column, its screen
-    // position never drifts on that axis due to scroll (it's sticky), so
-    // applying the scroll-diff correction there would incorrectly shift the
-    // anchor away from where the frozen band still is. The two axes are
-    // independent.
+    // frozen anchor points are sticky and don't drift with scroll, so skip the scroll-diff correction on that axis.
     const startPointX = startPoint.x + (this.dragAnchorFrozenCol ? 0 : scrollDiff.x);
     const startPointY = startPoint.y + (this.dragAnchorFrozen ? 0 : scrollDiff.y);
     let boundary = {
@@ -458,16 +438,11 @@ export class TableSelection extends TableDomSelector {
 
     const selectedCells = new Set<TempSortedTableCellFormat>();
     let findEnd = true;
-    // loop all cells to find correct boundary
     while (findEnd) {
       findEnd = false;
       for (const cell of tableCells) {
-        if (!cell.__rect) {
-          cell.__rect = cell.domNode.getBoundingClientRect();
-        }
-        // Determine whether the cell intersects with the current boundary
-        const { x, y, right, bottom } = cell.__rect;
-        // bowser MouseEvent clientY\clientX is floored. judge data need floored too
+        const { x, y, right, bottom } = getCellRect(cell);
+        // floor both sides to pixel precision to avoid sub-pixel floating point errors in intersection check
         if (
           isRectanglesIntersect(
             { x: Math.floor(boundary.x), y: Math.floor(boundary.y), x1: Math.floor(boundary.x1), y1: Math.floor(boundary.y1) },
@@ -476,19 +451,18 @@ export class TableSelection extends TableDomSelector {
             false,
           )
         ) {
-          // add cell to selected
           selectedCells.add(cell);
           tableCells.delete(cell);
-          // update boundary
+          // only re-scan if the boundary actually expanded; merged cells can grow it in any direction
+          if (x < boundary.x || y < boundary.y || right > boundary.x1 || bottom > boundary.y1) {
+            findEnd = true;
+          }
           boundary = {
             x: Math.min(boundary.x, x),
             y: Math.min(boundary.y, y),
             x1: Math.max(boundary.x1, right),
             y1: Math.max(boundary.y1, bottom),
           };
-          // recalculate boundary last cells
-          findEnd = true;
-          break;
         }
       }
     }
