@@ -40,7 +40,18 @@
   }
 
   &:not(:has(+ .ql-table-cell.is-frozen-col)) {
-    box-shadow: 4px 0 6px -4px .getCssVar(table-freeze-shadow) [];
+    overflow: visible;
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: -8px;
+      width: 8px;
+      height: 100%;
+      background: linear-gradient(to right, .getCssVar(table-freeze-shadow) [], transparent);
+      pointer-events: none;
+      z-index: 1;
+    }
   }
 }
 .ql-table-cell.is-frozen-col + .ql-table-cell.is-frozen-col {
@@ -49,4 +60,7 @@
 
 .ql-table-row.is-frozen .ql-table-cell.is-frozen-col {
   z-index: @freeze-z-corner;
+  &::after {
+    display: none;
+  }
 }
