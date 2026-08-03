@@ -3,7 +3,7 @@ import type { TableMainFormat, TableWrapperFormat } from '../formats';
 import type { TableUp } from '../table-up';
 import type { Position, RelactiveRect, TableSelectionOptions } from '../utils';
 import Quill from 'quill';
-import { getTableMainRect, TableCellFormat, TableCellInnerFormat } from '../formats';
+import { getTableMainRect, TableCellFormat, TableCellInnerFormat, TableRowFormat } from '../formats';
 import { addScrollEvent, AutoScroller, blotName, clearScrollEvent, createBEM, createResizeObserver, findAllParentBlot, findParentBlot, getElementScrollPosition, getRelativeRect, isRectanglesIntersect, tableUpEvent, tableUpInternal } from '../utils';
 import { pasteCells } from './table-clipboard';
 import { TableDomSelector } from './table-dom-selector';
@@ -365,8 +365,7 @@ export class TableSelection extends TableDomSelector {
     );
 
     // frozen cells stay sticky regardless of scroll; cells scrolled behind them share the same screen rect but are hidden.
-    // exclude fully-hidden cells and clamp partially-hidden ones to their visible slice. Cache rects per call to avoid
-    // repeated querySelectorAll / blot-tree traversals on every mousemove.
+    // exclude fully-hidden cells. cache getBoundingClientRect per call to avoid repeated layout reads on every mousemove.
     const getCellRect = (cell: TempSortedTableCellFormat) => cell.__rect ?? (cell.__rect = cell.domNode.getBoundingClientRect());
 
     const freezeRow = tableMainBlot.freezeRow;
@@ -599,24 +598,41 @@ export class TableSelection extends TableDomSelector {
   recomputeBoundaryFromSelectedTds() {
     if (this.selectedTds.length <= 0 || !this.table) return;
 
-    // A selected non-frozen cell may have scrolled to a position hidden
-    // underneath the frozen band (or beyond it entirely) — its rect is still
-    // geometrically well-defined but visually invisible there. Clamp such a
-    // cell's contribution to the frozen band's own far edge (always
-    // accurate, since frozen rows/columns are genuinely visible wherever
-    // they render) so it can't pull the bounding box outside where content
-    // is actually visible. Frozen cells themselves are never clamped on the
-    // axis they're frozen on — their rect there is always their true,
-    // currently-visible position. Both axes are independent.
+    // A non-frozen cell scrolled behind the frozen band is geometrically
+    // well-defined but visually hidden. Clamp its top/left contribution to
+    // the frozen boundary so it can't pull the selection box into the hidden
+    // area. Frozen cells are never clamped on their frozen axis. Both axes
+    // are independent.
+    const tableMainBlot = Quill.find(this.table) as TableMainFormat;
+    if (!tableMainBlot) return;
+    const freezeRow = tableMainBlot.freezeRow;
+    const freezeCol = tableMainBlot.freezeCol;
+    const rows = freezeRow > 0 || freezeCol > 0 ? tableMainBlot.descendants(TableRowFormat) : [];
+
     let frozenBottom = Number.NEGATIVE_INFINITY;
-    for (const row of Array.from(this.table.querySelectorAll('tr.is-frozen'))) {
-      const rect = row.getBoundingClientRect();
-      if (rect.bottom > frozenBottom) frozenBottom = rect.bottom;
+    if (freezeRow > 0 && rows.length >= freezeRow) {
+      frozenBottom = rows[freezeRow - 1].domNode.getBoundingClientRect().bottom;
     }
+    // Use the left edge of the first non-frozen column cell as frozenRight.
+    // Using a frozen cell's right edge is incorrect when it has colspan
+    // spanning into non-frozen columns — the left of colIndex===freezeCol
+    // is always the exact frozen boundary regardless of merging.
     let frozenRight = Number.NEGATIVE_INFINITY;
-    for (const cell of Array.from(this.table.querySelectorAll('.is-frozen-col'))) {
-      const rect = cell.getBoundingClientRect();
-      if (rect.right > frozenRight) frozenRight = rect.right;
+    if (freezeCol > 0) {
+      const colIdToIndex = new Map(tableMainBlot.getColIds().map((id, i) => [id, i]));
+      for (const row of rows) {
+        let cell = row.children.head as TableCellFormat | null;
+        let found = false;
+        while (cell) {
+          if (colIdToIndex.get(cell.colId) === freezeCol) {
+            frozenRight = cell.domNode.getBoundingClientRect().left;
+            found = true;
+            break;
+          }
+          cell = cell.next as TableCellFormat | null;
+        }
+        if (found) break;
+      }
     }
 
     const startPoint = { x: Infinity, y: Infinity };
