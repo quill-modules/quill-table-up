@@ -1,7 +1,7 @@
-import type TypeScroll from 'quill/blots/scroll';
 import type { TableValue } from '../utils';
 import type { TableBodyFormat } from './table-body-format';
-import { blotName, randomId, tableUpSize } from '../utils';
+import Quill from 'quill';
+import { blotName, randomId, tableUpEvent, tableUpSize } from '../utils';
 import { ContainerFormat } from './container-format';
 import { TableCellFormat } from './table-cell-format';
 import { TableCellInnerFormat } from './table-cell-inner-format';
@@ -29,10 +29,33 @@ export class TableMainFormat extends ContainerFormat {
     return node;
   }
 
-  constructor(public scroll: TypeScroll, domNode: HTMLElement, _value: unknown) {
+  private freezeUpdateTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor(public scroll: any, domNode: HTMLElement, _value: unknown) {
     super(scroll, domNode);
     this.updateAlign();
+    this.scroll.emitter.on(Quill.events.TEXT_CHANGE, this.scheduleFreezeUpdate);
+    this.scroll.emitter.on(tableUpEvent.AFTER_TABLE_RESIZE, this.scheduleFreezeUpdate);
   }
+
+  remove() {
+    this.scroll.emitter.off(Quill.events.TEXT_CHANGE, this.scheduleFreezeUpdate);
+    this.scroll.emitter.off(tableUpEvent.AFTER_TABLE_RESIZE, this.scheduleFreezeUpdate);
+    if (this.freezeUpdateTimer) {
+      clearTimeout(this.freezeUpdateTimer);
+      this.freezeUpdateTimer = null;
+    }
+    super.remove();
+  }
+
+  scheduleFreezeUpdate = () => {
+    if (this.freezeUpdateTimer) clearTimeout(this.freezeUpdateTimer);
+    this.freezeUpdateTimer = setTimeout(() => {
+      this.freezeUpdateTimer = null;
+      if (this.freezeRow > 0) this.updateFreezeRows(true);
+      if (this.freezeCol > 0) this.updateFreezeCols();
+    }, 150);
+  };
 
   colWidthFillTable() {
     if (this.full) {
@@ -79,13 +102,11 @@ export class TableMainFormat extends ContainerFormat {
     this.updateAlign();
   }
 
+  // All cols carry the same freezeRow value (kept in sync by the setter below), so reading
+  // the first col avoids the O(cols) max-scan without needing a cache.
   get freezeRow() {
-    const cols = this.getCols();
-    let max = 0;
-    for (const col of cols) {
-      if (col.freezeRow > max) max = col.freezeRow;
-    }
-    return max;
+    const firstCol = this.domNode.querySelector('colgroup > col') as HTMLElement | null;
+    return firstCol ? (Number(firstCol.dataset.freezeRow) || 0) : 0;
   }
 
   set freezeRow(value: number) {
@@ -116,12 +137,8 @@ export class TableMainFormat extends ContainerFormat {
   }
 
   get freezeCol() {
-    const cols = this.getCols();
-    let max = 0;
-    for (const col of cols) {
-      if (col.freezeCol > max) max = col.freezeCol;
-    }
-    return max;
+    const firstCol = this.domNode.querySelector('colgroup > col') as HTMLElement | null;
+    return firstCol ? (Number(firstCol.dataset.freezeCol) || 0) : 0;
   }
 
   set freezeCol(value: number) {

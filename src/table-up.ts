@@ -328,7 +328,6 @@ export class TableUp {
     this.listenEditableChange();
     this.quillHack();
     this.listenBalanceCells();
-    this.listenFreezeResize();
   }
 
   initialContainer() {
@@ -1076,25 +1075,6 @@ export class TableUp {
         }
       },
     );
-  }
-
-  listenFreezeResize() {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const scheduleUpdate = () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        for (const tableBlot of this.quill.scroll.descendants(TableMainFormat)) {
-          if (tableBlot.freezeRow > 0) {
-            tableBlot.updateFreezeRows(true);
-          }
-          if (tableBlot.freezeCol > 0) {
-            tableBlot.updateFreezeCols();
-          }
-        }
-      }, 150);
-    };
-    this.quill.on(Quill.events.TEXT_CHANGE, scheduleUpdate);
-    this.quill.on(tableUpEvent.AFTER_TABLE_RESIZE, scheduleUpdate);
   }
 
   deleteTable(selectedTds: TableCellInnerFormat[]) {

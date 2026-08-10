@@ -243,14 +243,23 @@ export class TableCellFormat extends ContainerFormat {
 
   get isFrozenRow(): boolean {
     const tableMain = findParentBlot(this, blotName.tableMain);
-    const rowIndex = tableMain.getRowIds().indexOf(this.rowId);
-    return rowIndex !== -1 && rowIndex < tableMain.freezeRow;
+    const freezeRow = tableMain.freezeRow;
+    if (freezeRow <= 0) return false;
+    const tr = this.parent?.domNode as HTMLTableRowElement | undefined;
+    return !!tr && tr.rowIndex >= 0 && tr.rowIndex < freezeRow;
   }
 
   get isFrozenCol(): boolean {
     const tableMain = findParentBlot(this, blotName.tableMain);
-    const colIndex = this.getColumnIndex();
-    return colIndex !== -1 && colIndex < tableMain.freezeCol;
+    const freezeCol = tableMain.freezeCol;
+    if (freezeCol <= 0) return false;
+    const cols = tableMain.domNode.querySelector('colgroup')?.children;
+    if (!cols) return false;
+    const limit = Math.min(freezeCol, cols.length);
+    for (let i = 0; i < limit; i++) {
+      if ((cols[i] as HTMLElement).dataset.colId === this.colId) return true;
+    }
+    return false;
   }
 
   getCellInner() {
