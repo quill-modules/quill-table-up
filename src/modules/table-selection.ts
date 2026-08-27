@@ -520,6 +520,13 @@ export class TableSelection extends TableDomSelector {
     this.setSelectedTds(this.computeSelectedTds(startPoint, startPoint));
     this.show();
 
+    const tableMain = Quill.find(closestTable) as TableMainFormat | null;
+    const tableWrapper = tableMain?.parent?.domNode as HTMLElement | undefined;
+    // Defer AutoScroller.start until the user actually drags. Starting it on
+    // mousedown causes plain clicks near the tableWrapper edge (within the
+    // scroll deadzone) to auto-scroll before mouseup can cancel the rAF loop.
+    let autoScrollStarted = false;
+
     const mouseMoveHandler = (mousemoveEvent: MouseEvent) => {
       this.dragging = true;
       const { button, target, clientX, clientY } = mousemoveEvent;
@@ -540,6 +547,16 @@ export class TableSelection extends TableDomSelector {
       }
       this.update();
       this.autoScroller.updateMousePosition(clientX, clientY);
+      if (!autoScrollStarted && tableWrapper) {
+        autoScrollStarted = true;
+        // re-run hit testing on every auto-scroll tick (not just on `mousemove`),
+        // using the last known mouse position, so the selection keeps growing
+        // while the user holds the mouse near an edge without moving it further.
+        this.autoScroller.start(tableWrapper, () => {
+          this.setSelectedTds(this.computeSelectedTds(startPoint, { x: this.autoScroller.mouseX, y: this.autoScroller.mouseY }));
+          this.update();
+        });
+      }
     };
     const mouseUpHandler = () => {
       document.body.removeEventListener('mousemove', mouseMoveHandler, false);
@@ -553,17 +570,6 @@ export class TableSelection extends TableDomSelector {
 
     document.body.addEventListener('mousemove', mouseMoveHandler, false);
     document.body.addEventListener('mouseup', mouseUpHandler, false);
-    const tableMain = Quill.find(closestTable) as TableMainFormat;
-    if (!tableMain) return;
-    const tableWrapper = tableMain.parent!.domNode as HTMLElement;
-    this.autoScroller.updateMousePosition(clientX, clientY);
-    // re-run hit testing on every auto-scroll tick (not just on `mousemove`),
-    // using the last known mouse position, so the selection keeps growing
-    // while the user holds the mouse near an edge without moving it further.
-    this.autoScroller.start(tableWrapper, () => {
-      this.setSelectedTds(this.computeSelectedTds(startPoint, { x: this.autoScroller.mouseX, y: this.autoScroller.mouseY }));
-      this.update();
-    });
   }
 
   updateWithSelectedTds() {
