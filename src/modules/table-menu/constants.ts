@@ -272,7 +272,7 @@ export const tableMenuTools: Record<string, Tool> = {
   UnfreezeRow: {
     name: 'UnfreezeRow',
     icon: UnfreezeRow,
-    tip: 'Unfreeze',
+    tip: 'Unfreeze Row',
     handle() {
       if (!this.table) return;
       const tableMainBlot = Quill.find(this.table) as TableMainFormat;
