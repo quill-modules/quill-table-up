@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TableCellInnerFormat } from '../../formats';
 import { tableMenuTools } from '../../modules';
 import { TableUp } from '../../table-up';
+import { tableUpEvent } from '../../utils';
 import { createQuillWithTableModule, createTable } from './utils';
 
 beforeEach(() => {
@@ -232,6 +233,37 @@ describe('table freeze col menu tools', () => {
 
     // boundary must be pushed to 3 (past the colspan=3 cell starting at col 0), not 2
     expect(tableMainBlot.freezeCol).toBe(3);
+  });
+});
+
+describe('TableMainFormat.remove cleanup', () => {
+  it('remove() unbinds emitter listeners and clears the pending freeze update timer', async () => {
+    const quill = await createTable(3, 2, { full: false });
+    const table = quill.root.querySelector('table')!;
+    const tableMainBlot = Quill.find(table) as any;
+    tableMainBlot.freezeRow = 1;
+    await vi.runAllTimersAsync();
+
+    // schedule an update, then remove the table before the timer fires
+    tableMainBlot.scheduleFreezeUpdate();
+    expect(tableMainBlot.freezeUpdateTimer).not.toBeNull();
+
+    const updateSpy = vi.spyOn(tableMainBlot, 'updateFreezeRows');
+    const emitter = quill.emitter as any;
+    // baseline listener count for the two events the constructor subscribes to
+    const textChangeBefore = emitter.listeners(Quill.events.TEXT_CHANGE).length;
+    const resizeBefore = emitter.listeners(tableUpEvent.AFTER_TABLE_RESIZE).length;
+
+    tableMainBlot.remove();
+
+    expect(tableMainBlot.freezeUpdateTimer).toBeNull();
+    // both listeners registered by the constructor must be removed
+    expect(emitter.listeners(Quill.events.TEXT_CHANGE).length).toBe(textChangeBefore - 1);
+    expect(emitter.listeners(tableUpEvent.AFTER_TABLE_RESIZE).length).toBe(resizeBefore - 1);
+
+    // the scheduled callback must not fire after remove()
+    await vi.runAllTimersAsync();
+    expect(updateSpy).not.toHaveBeenCalled();
   });
 });
 

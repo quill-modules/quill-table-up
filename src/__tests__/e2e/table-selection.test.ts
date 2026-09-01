@@ -608,4 +608,74 @@ test.describe('TableSelection should work correct when wrapper scroll', () => {
     });
     expect(selectedTds.length).toBe(9);
   });
+
+  test('clicking near the wrapper edge without dragging does not trigger auto-scroll', async ({ page }) => {
+    // regression for the "defer AutoScroller.start until first mousemove" fix:
+    // on the old code, mousedown started the rAF loop, and any click landing
+    // within the `AutoScroller(50, 40)` deadzone (40px of the wrapper's top
+    // or bottom, 50px of its left or right) would auto-scroll for at least
+    // one tick before mouseup could cancel the loop.
+    await page.locator('#container1 .ql-toolbar .ql-table-up > .ql-picker-label').first().click();
+    await page.locator('#container1 .ql-toolbar .ql-table-up .ql-custom-select').getByText('Custom').click();
+    await page.locator('.table-up-input__item').nth(0).locator('input').fill('20');
+    await page.locator('.table-up-input__item').nth(1).locator('input').fill('1');
+    await page.getByRole('button', { name: 'Confirm' }).click();
+    await page.locator('#editor1 .ql-table-wrapper').waitFor({ state: 'visible' });
+
+    // bound the wrapper so it becomes the scrolling container, and give it
+    // enough overflow that scrollTop can meaningfully change
+    await page.evaluate(() => {
+      for (const td of Array.from(document.querySelectorAll('#editor1 .ql-table td, #editor1 .ql-table th'))) {
+        (td as HTMLElement).style.height = '40px';
+      }
+    });
+    await page.evaluate(() => {
+      const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
+      wrapper.style.maxHeight = '200px';
+    });
+
+    // scroll to the middle so both up-scroll and down-scroll deadzones are
+    // meaningful (scrollTop can move in either direction)
+    await page.evaluate(() => {
+      const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
+      wrapper.scrollTop = 200;
+    });
+    await page.waitForTimeout(50);
+
+    const scrollTopBefore = await page.evaluate(() => {
+      const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
+      return wrapper.scrollTop;
+    });
+
+    // find a cell whose center lies inside the top-edge deadzone
+    // (< wrapper.top + 40) so a click there would have auto-scrolled up under
+    // the old code
+    const target = await page.evaluate(() => {
+      const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const cells = Array.from(document.querySelectorAll('#editor1 .ql-table td, #editor1 .ql-table th'));
+      for (const cell of cells) {
+        const rect = cell.getBoundingClientRect();
+        const cy = rect.top + rect.height / 2;
+        if (cy > wrapperRect.top && cy < wrapperRect.top + 40) {
+          return { x: rect.left + rect.width / 2, y: cy };
+        }
+      }
+      return null;
+    });
+    expect(target).not.toBeNull();
+
+    // click (mousedown + mouseup) with a hold in between that's long enough
+    // for the old rAF loop to have ticked several times if it were running
+    await page.mouse.move(target!.x, target!.y);
+    await page.mouse.down();
+    await page.waitForTimeout(150);
+    await page.mouse.up();
+
+    const scrollTopAfter = await page.evaluate(() => {
+      const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
+      return wrapper.scrollTop;
+    });
+    expect(scrollTopAfter).toBe(scrollTopBefore);
+  });
 });

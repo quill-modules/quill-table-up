@@ -481,3 +481,148 @@ test('corner cell (frozen row + frozen column) stays pinned in both directions w
   const plainCellZIndex = await page.locator('#editor1 .ql-table tr').nth(2).locator('td, th').nth(2).evaluate(el => getComputedStyle(el).zIndex);
   expect(Number(cornerZIndex)).toBeGreaterThan(Number(plainCellZIndex) || 0);
 });
+
+test('selection overlay tracks a selection spanning frozen and scrolled columns after further scrolling', async ({ page }) => {
+  // horizontal mirror of the vertical overlay test above — exercises the
+  // frozen-column branch of `recomputeBoundaryFromSelectedTds` (the row
+  // branch is already covered).
+  await page.locator('#container1 .ql-toolbar .ql-table-up > .ql-picker-label').first().click();
+  await page.locator('#container1 .ql-toolbar .ql-table-up .ql-custom-select').getByText('Custom').click();
+  await page.locator('.table-up-input__item').nth(0).locator('input').fill('2');
+  await page.locator('.table-up-input__item').nth(1).locator('input').fill('25');
+  await page.getByRole('button', { name: 'Confirm' }).click();
+  await page.locator('#editor1 .ql-table-wrapper').waitFor({ state: 'visible' });
+
+  await page.evaluate(() => {
+    const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
+    for (const col of tableMainBlot.getCols()) {
+      col.width = 80;
+    }
+  });
+  await page.evaluate(() => {
+    const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
+    tableMainBlot.freezeCol = 1;
+  });
+  await page.evaluate(() => {
+    const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
+    // wide enough that cols 0-3 all fit inside the wrapper's visible content
+    // area (80px cols × 4 = 320px, plus 50px left padding = 370px < 400px);
+    // otherwise the mouse endpoint for the drag lands outside the wrapper
+    // and the mousemove handler drops the event
+    wrapper.style.maxWidth = '500px';
+    wrapper.style.paddingLeft = '50px';
+  });
+
+  // drag-select spanning the frozen column (col 0) and several non-frozen
+  // columns to its right, on row 0.
+  // note: the mouse endpoint must stay clear of the wrapper's right edge by
+  // more than the AutoScroller X deadzone (50px), otherwise auto-scroll
+  // would expand the selection past col 3.
+  const table = page.locator('#editor1 .ql-table');
+  const firstRowCells = table.locator('tr').first().locator('td, th');
+  const startBox = (await firstRowCells.nth(0).boundingBox())!;
+  const endBox = (await firstRowCells.nth(3).boundingBox())!;
+  await page.mouse.move(startBox.x + 2, startBox.y + 2);
+  await page.mouse.down();
+  await page.mouse.move(endBox.x + endBox.width - 2, endBox.y + endBox.height - 2);
+  await page.mouse.up();
+
+  const selectedBefore = await page.evaluate(() => {
+    const tableModule = window.quills[0].getModule('table-up') as any;
+    return (tableModule.getModule('table-selection') as any).selectedTds.length;
+  });
+  expect(selectedBefore).toBe(4); // cols 0-3, 1 row each
+
+  // scroll a small horizontal delta so cols 1..3 shift left but col 3 stays
+  // visible past the frozen band's right edge
+  await page.evaluate(() => {
+    const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
+    wrapper.scrollLeft += 40;
+  });
+  await page.waitForTimeout(50);
+
+  // overlay must match the union of the still-selected cells: col 0 pinned
+  // at the frozen band's left, through col 3's current (post-scroll) right
+  const overlayBox = (await page.locator('#editor1 .table-up-selection__line').boundingBox())!;
+  const frozenCellBox = (await firstRowCells.nth(0).boundingBox())!;
+  const lastCellBox = (await firstRowCells.nth(3).boundingBox())!;
+
+  expect(overlayBox.x).toBeCloseTo(frozenCellBox.x, 0);
+  expect(overlayBox.x + overlayBox.width).toBeCloseTo(lastCellBox.x + lastCellBox.width, 0);
+});
+
+test('selection overlay tracks a corner-anchored selection after diagonal scroll', async ({ page }) => {
+  // exercises both `frozenBottom` and `frozenRight` clamps together in
+  // `recomputeBoundaryFromSelectedTds` — the branch that fires when a
+  // selection starting at the corner cell (both row- and col-frozen) is
+  // pushed down-and-right by scroll on both axes.
+  await page.locator('#container1 .ql-toolbar .ql-table-up > .ql-picker-label').first().click();
+  await page.locator('#container1 .ql-toolbar .ql-table-up .ql-custom-select').getByText('Custom').click();
+  await page.locator('.table-up-input__item').nth(0).locator('input').fill('15');
+  await page.locator('.table-up-input__item').nth(1).locator('input').fill('15');
+  await page.getByRole('button', { name: 'Confirm' }).click();
+  await page.locator('#editor1 .ql-table-wrapper').waitFor({ state: 'visible' });
+
+  // pixel-uniform cells to avoid sub-pixel jitter at cell boundaries
+  await page.evaluate(() => {
+    const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
+    for (const col of tableMainBlot.getCols()) {
+      col.width = 80;
+    }
+    for (const td of Array.from(document.querySelectorAll('#editor1 .ql-table td, #editor1 .ql-table th'))) {
+      (td as HTMLElement).style.height = '40px';
+    }
+  });
+  await page.evaluate(() => {
+    const tableMainBlot = window.Quill.find(document.querySelector('#editor1 .ql-table')!) as any;
+    tableMainBlot.freezeRow = 1;
+    tableMainBlot.freezeCol = 1;
+  });
+  await page.evaluate(() => {
+    const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
+    // wrapper must be wide/tall enough that the drag endpoint is clear of
+    // both the AutoScroller X (50px) and Y (40px) deadzones, otherwise
+    // auto-scroll would extend the selection past the 3x3 block
+    wrapper.style.maxHeight = '320px';
+    wrapper.style.maxWidth = '420px';
+    wrapper.style.paddingTop = '50px';
+    wrapper.style.paddingLeft = '60px';
+  });
+
+  // drag-select the top-left 3x3 block (corner + 2 rows down + 2 cols right)
+  const table = page.locator('#editor1 .ql-table');
+  const rows = table.locator('tr');
+  const startBox = (await rows.nth(0).locator('td, th').first().boundingBox())!;
+  const endBox = (await rows.nth(2).locator('td, th').nth(2).boundingBox())!;
+  await page.mouse.move(startBox.x + 2, startBox.y + 2);
+  await page.mouse.down();
+  await page.mouse.move(endBox.x + endBox.width - 2, endBox.y + endBox.height - 2);
+  await page.mouse.up();
+
+  const selectedBefore = await page.evaluate(() => {
+    const tableModule = window.quills[0].getModule('table-up') as any;
+    return (tableModule.getModule('table-selection') as any).selectedTds.length;
+  });
+  expect(selectedBefore).toBe(9);
+
+  // scroll diagonally after selection — small enough that row 2 / col 2 stay
+  // visible past the frozen band
+  await page.evaluate(() => {
+    const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
+    wrapper.scrollTop += 20;
+    wrapper.scrollLeft += 20;
+    wrapper.dispatchEvent(new Event('scroll'));
+  });
+  await page.waitForTimeout(50);
+
+  // overlay must span from the pinned corner (top-left) to the current
+  // bottom-right of the last selected cell
+  const overlayBox = (await page.locator('#editor1 .table-up-selection__line').boundingBox())!;
+  const cornerBox = (await rows.nth(0).locator('td, th').first().boundingBox())!;
+  const lastBox = (await rows.nth(2).locator('td, th').nth(2).boundingBox())!;
+
+  expect(overlayBox.x).toBeCloseTo(cornerBox.x, 0);
+  expect(overlayBox.y).toBeCloseTo(cornerBox.y, 0);
+  expect(overlayBox.x + overlayBox.width).toBeCloseTo(lastBox.x + lastBox.width, 0);
+  expect(overlayBox.y + overlayBox.height).toBeCloseTo(lastBox.y + lastBox.height, 0);
+});
