@@ -1922,6 +1922,33 @@ describe('clipboard column', () => {
       quill.getContents(),
     );
   });
+
+  it('clipboard preserves freezeRow/freezeCol on <col> when pasting a partial table fragment', () => {
+    const quill = createQuillWithTableModule(`<p><br></p>`);
+    const delta = quill.clipboard.convert({
+      html: `
+        <table>
+          <colgroup>
+            <col width="100px" data-freeze-row="2" data-freeze-col="1">
+            <col width="100px" data-freeze-row="2" data-freeze-col="1">
+          </colgroup>
+          <tbody>
+            <tr>
+              <td>a</td>
+              <td>b</td>
+            </tr>
+          </tbody>
+        </table>
+      `,
+    });
+    const colOps = delta.ops.filter(op => (op.insert as any)?.['table-up-col']);
+    expect(colOps).toHaveLength(2);
+    for (const op of colOps) {
+      const col = (op.insert as any)['table-up-col'];
+      expect(col.freezeRow).toBe(2);
+      expect(col.freezeCol).toBe(1);
+    }
+  });
 });
 
 describe('clipboard content format', () => {
