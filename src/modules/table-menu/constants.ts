@@ -137,6 +137,9 @@ export const tableMenuTools: Record<string, Tool> = {
     handle(tableModule, selectedTds) {
       tableModule.mergeCells(selectedTds);
     },
+    show(tableModule, selectedTds) {
+      return selectedTds.length > 1;
+    },
   },
   SplitCell: {
     name: 'SplitCell',
@@ -144,6 +147,9 @@ export const tableMenuTools: Record<string, Tool> = {
     tip: 'Split Cell',
     handle(tableModule, selectedTds) {
       tableModule.splitCell(selectedTds);
+    },
+    show(tableModule, selectedTds) {
+      return selectedTds.length === 1 && (selectedTds[0].rowspan > 1 || selectedTds[0].colspan > 1);
     },
   },
   DeleteRow: {
@@ -221,6 +227,10 @@ export const tableMenuTools: Record<string, Tool> = {
       });
       tableMainBlot.insertBefore(tableCaption, tableMainBlot.children.head);
     },
+    show(tableModule, selectedTds, tableMainBlot) {
+      const head = tableMainBlot.children.head;
+      return head?.statics.blotName !== blotName.tableCaption;
+    },
   },
   ToggleTdBetweenTh: {
     name: 'ToggleTdBetweenTh',
@@ -243,6 +253,9 @@ export const tableMenuTools: Record<string, Tool> = {
 
       tableModule.convertTableBodyByCells(tableMainBlot, selectedTds, 'thead');
     },
+    show(tableModule, selectedTds) {
+      return selectedTds.some(td => td.wrapTag !== 'thead');
+    },
   },
   ConvertTotfoot: {
     name: 'ConvertTotfoot',
@@ -254,6 +267,9 @@ export const tableMenuTools: Record<string, Tool> = {
       if (!tableMainBlot) return;
 
       tableModule.convertTableBodyByCells(tableMainBlot, selectedTds, 'tfoot');
+    },
+    show(tableModule, selectedTds) {
+      return selectedTds.some(td => td.wrapTag !== 'tfoot');
     },
   },
   FreezeRow: {
@@ -268,6 +284,9 @@ export const tableMenuTools: Record<string, Tool> = {
       const boundary = computeFreezeRowBoundary(tableMainBlot, selectedTds);
       tableMainBlot.freezeRow = boundary;
     },
+    show(tableModule, selectedTds, tableMainBlot) {
+      return tableMainBlot.freezeRow === 0;
+    },
   },
   UnfreezeRow: {
     name: 'UnfreezeRow',
@@ -279,6 +298,9 @@ export const tableMenuTools: Record<string, Tool> = {
       if (!tableMainBlot) return;
 
       tableMainBlot.freezeRow = 0;
+    },
+    show(tableModule, selectedTds, tableMainBlot) {
+      return tableMainBlot.freezeRow > 0;
     },
   },
   FreezeCol: {
@@ -293,6 +315,9 @@ export const tableMenuTools: Record<string, Tool> = {
       const boundary = computeFreezeColBoundary(tableMainBlot, selectedTds);
       tableMainBlot.freezeCol = boundary;
     },
+    show(tableModule, selectedTds, tableMainBlot) {
+      return tableMainBlot.freezeCol === 0;
+    },
   },
   UnfreezeCol: {
     name: 'UnfreezeCol',
@@ -304,6 +329,9 @@ export const tableMenuTools: Record<string, Tool> = {
       if (!tableMainBlot) return;
 
       tableMainBlot.freezeCol = 0;
+    },
+    show(tableModule, selectedTds, tableMainBlot) {
+      return tableMainBlot.freezeCol > 0;
     },
   },
 };
