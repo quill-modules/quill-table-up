@@ -195,8 +195,31 @@ export class TableCellInnerFormat extends ContainerFormat {
   }
 
   getRowIndex() {
-    const tableBlot = findParentBlot(this, blotName.tableMain);
-    return tableBlot.getRowIds().indexOf(this.rowId);
+    const tr = this.parent?.parent?.domNode as HTMLTableRowElement | undefined;
+    return tr && tr.rowIndex >= 0 ? tr.rowIndex : -1;
+  }
+
+  get isFrozenRow(): boolean {
+    const tableMain = findParentBlot(this, blotName.tableMain);
+    const freezeRow = tableMain.freezeRow;
+    if (freezeRow <= 0) return false;
+    const rowIndex = this.getRowIndex();
+    return rowIndex !== -1 && rowIndex < freezeRow;
+  }
+
+  // Only check whether this cell's colId matches one of the first `freezeCol` <col> elements;
+  // freezeCol is bounded (typically 1–3), so this is effectively O(1) with no cache.
+  get isFrozenCol(): boolean {
+    const tableMain = findParentBlot(this, blotName.tableMain);
+    const freezeCol = tableMain.freezeCol;
+    if (freezeCol <= 0) return false;
+    const cols = tableMain.domNode.querySelector('colgroup')?.children;
+    if (!cols) return false;
+    const limit = Math.min(freezeCol, cols.length);
+    for (let i = 0; i < limit; i++) {
+      if ((cols[i] as HTMLElement).dataset.colId === this.colId) return true;
+    }
+    return false;
   }
 
   getTableBody() {

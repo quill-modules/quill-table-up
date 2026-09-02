@@ -1,16 +1,16 @@
 import type { TableCellInnerFormat } from '../../formats';
 import type { TableSelection } from '../../modules';
 import type { TableUp } from '../../table-up';
-import { expect, test } from '@playwright/test';
-import { createTableBySelect, extendTest, pasteHTML } from './utils';
+import { expect } from '@playwright/test';
+import { createTableBySelect, pasteHTML, extendTest as test } from './utils';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('http://127.0.0.1:5500/docs/test.html');
   page.locator('.ql-container.ql-snow');
 });
 
-extendTest.describe('table cell keyboard handler enter', () => {
-  extendTest('cursor at the start of BlockEmbed', async ({ page, editorPage }) => {
+test.describe('table cell keyboard handler enter', () => {
+  test('cursor at the start of BlockEmbed', async ({ page, editorPage }) => {
     editorPage.index = 0;
     await editorPage.setContents([
       { insert: '\n' },
@@ -39,7 +39,7 @@ extendTest.describe('table cell keyboard handler enter', () => {
     }
   });
 
-  extendTest('cursor at the end of BlockEmbed', async ({ page, editorPage }) => {
+  test('cursor at the end of BlockEmbed', async ({ page, editorPage }) => {
     editorPage.index = 0;
     await editorPage.setContents([
       { insert: '\n' },
@@ -67,7 +67,7 @@ extendTest.describe('table cell keyboard handler enter', () => {
     }
   });
 
-  extendTest('selection multiple line', async ({ page, editorPage }) => {
+  test('selection multiple line', async ({ page, editorPage }) => {
     editorPage.index = 0;
     await editorPage.setContents([
       { insert: '\n' },
@@ -87,8 +87,8 @@ extendTest.describe('table cell keyboard handler enter', () => {
   });
 });
 
-extendTest.describe('table cell keyboard handler ArrowUp and ArrowDown', () => {
-  extendTest('test TableSelection should update when selection change', async ({ page, editorPage }) => {
+test.describe('table cell keyboard handler ArrowUp and ArrowDown', () => {
+  test('test TableSelection should update when selection change', async ({ page, editorPage }) => {
     editorPage.index = 0;
     await createTableBySelect(page, 'container1', 3, 3);
 
@@ -105,7 +105,7 @@ extendTest.describe('table cell keyboard handler ArrowUp and ArrowDown', () => {
     expect(cell1Bound).toEqual(newSelectionWrapper);
   });
 
-  extendTest('test TableSelection and TableMenuSelect should hide when selection out table', async ({ page }) => {
+  test('test TableSelection and TableMenuSelect should hide when selection out table', async ({ page }) => {
     await createTableBySelect(page, 'container1', 3, 3);
     const firstCell1 = page.locator('#editor1').getByRole('cell').nth(0);
     await firstCell1.click();
@@ -140,7 +140,7 @@ extendTest.describe('table cell keyboard handler ArrowUp and ArrowDown', () => {
     await expect(page.locator('#container2 .table-up-menu')).not.toBeVisible();
   });
 
-  extendTest('test table keyboard ArrowUp and ArrowDown should work', async ({ page, editorPage }) => {
+  test('test table keyboard ArrowUp and ArrowDown should work', async ({ page, editorPage }) => {
     editorPage.index = 0;
     editorPage.setContents([
       { insert: '123456\n' },
@@ -199,7 +199,7 @@ extendTest.describe('table cell keyboard handler ArrowUp and ArrowDown', () => {
     expect((await editorPage.getSelection())!.index).toBe(52);
   });
 
-  extendTest('test TableSelection should update when selection change and menu display', async ({ page, editorPage }) => {
+  test('test TableSelection should update when selection change and menu display', async ({ page, editorPage }) => {
     editorPage.index = 0;
     await createTableBySelect(page, 'container1', 3, 3);
 
@@ -220,8 +220,8 @@ extendTest.describe('table cell keyboard handler ArrowUp and ArrowDown', () => {
   });
 });
 
-extendTest.describe('TableSelection keyboard handler', () => {
-  extendTest('backspace should not remove cell content when focus element not in editor', async ({ page, editorPage }) => {
+test.describe('TableSelection keyboard handler', () => {
+  test('backspace should not remove cell content when focus element not in editor', async ({ page, editorPage }) => {
     editorPage.index = 0;
     await editorPage.setContents([
       { insert: '\n' },
@@ -248,7 +248,7 @@ extendTest.describe('TableSelection keyboard handler', () => {
     expect(await page.locator('#editor1 .ql-table-wrapper .ql-table-cell-inner p').nth(0).textContent()).toBe('some text');
   });
 
-  extendTest('should handle delete table cell text when selected tds', async ({ page, editorPage }) => {
+  test('should handle delete table cell text when selected tds', async ({ page, editorPage }) => {
     editorPage.index = 0;
     await editorPage.setContents([
       { insert: '\n' },
@@ -323,7 +323,7 @@ extendTest.describe('TableSelection keyboard handler', () => {
     await expect(page.locator('#editor1 .ql-table .ql-table-cell').nth(7)).toHaveText('');
   });
 
-  extendTest('should delete table when selected all cells and press delete', async ({ page, editorPage }) => {
+  test('should delete table when selected all cells and press delete', async ({ page, editorPage }) => {
     editorPage.index = 0;
     await editorPage.setContents([
       { insert: '\n' },
@@ -373,7 +373,7 @@ extendTest.describe('TableSelection keyboard handler', () => {
     expect(await page.locator('#editor1 .ql-table').count()).toBe(0);
   });
 
-  extendTest('copy cells', async ({ page, editorPage }) => {
+  test('copy cells', async ({ page, editorPage }) => {
     editorPage.page = page;
     editorPage.index = 0;
     await editorPage.setContents([
@@ -431,7 +431,7 @@ extendTest.describe('TableSelection keyboard handler', () => {
     expect(copiedText.replaceAll('\r', '')).toEqual(cellText);
   });
 
-  extendTest('paste cells with struct(colspan)', async ({ page, browserName, editorPage }) => {
+  test('paste cells with struct(colspan)', async ({ page, browserName, editorPage }) => {
     editorPage.page = page;
     editorPage.index = 0;
     await createTableBySelect(page, 'container1', 3, 3);
@@ -454,7 +454,7 @@ extendTest.describe('TableSelection keyboard handler', () => {
     await expect(cells.nth(3)).toHaveAttribute('colspan', '2');
   });
 
-  extendTest('paste cells with struct(rowspan)', async ({ page, browserName, editorPage }) => {
+  test('paste cells with struct(rowspan)', async ({ page, browserName, editorPage }) => {
     editorPage.page = page;
     editorPage.index = 0;
     await createTableBySelect(page, 'container1', 5, 5);
@@ -479,7 +479,7 @@ extendTest.describe('TableSelection keyboard handler', () => {
     await expect(cells.nth(6)).toHaveText('7');
   });
 
-  extendTest('paste cells with struct(colspan and rowspan)', async ({ page, browserName, editorPage }) => {
+  test('paste cells with struct(colspan and rowspan)', async ({ page, browserName, editorPage }) => {
     editorPage.page = page;
     editorPage.index = 0;
     await createTableBySelect(page, 'container1', 5, 5);
@@ -504,7 +504,7 @@ extendTest.describe('TableSelection keyboard handler', () => {
     await expect(cells.nth(5)).toHaveText('8');
   });
 
-  extendTest('paste cells with `emptyRow` in `autoMerge` true', async ({ page, browserName, editorPage }) => {
+  test('paste cells with `emptyRow` in `autoMerge` true', async ({ page, browserName, editorPage }) => {
     editorPage.page = page;
     editorPage.index = 0;
     await createTableBySelect(page, 'container1', 5, 5);
@@ -538,7 +538,7 @@ extendTest.describe('TableSelection keyboard handler', () => {
     expect(await page.locator('#container1 .ql-table-wrapper tr').count()).toEqual(3);
   });
 
-  extendTest('paste cells with `emptyRow` in `autoMerge` false', async ({ page, browserName, editorPage }) => {
+  test('paste cells with `emptyRow` in `autoMerge` false', async ({ page, browserName, editorPage }) => {
     editorPage.page = page;
     editorPage.index = 4;
     await createTableBySelect(page, 'container5', 5, 5);
@@ -590,7 +590,7 @@ extendTest.describe('TableSelection keyboard handler', () => {
     expect(await page.locator('#container5 .ql-table-wrapper tr').count()).toEqual(5);
   });
 
-  extendTest('paste cells with other Block', async ({ page, browserName, editorPage }) => {
+  test('paste cells with other Block', async ({ page, browserName, editorPage }) => {
     editorPage.page = page;
     editorPage.index = 4;
     await createTableBySelect(page, 'container5', 5, 5);

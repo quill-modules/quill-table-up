@@ -1,12 +1,12 @@
-import { expect, test } from '@playwright/test';
-import { createTableBySelect, extendTest } from './utils';
+import { expect } from '@playwright/test';
+import { createTableBySelect, extendTest as test } from './utils';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('http://127.0.0.1:5500/docs/test.html');
   page.locator('.ql-container.ql-snow');
 });
 
-extendTest('test table full width switch redo and undo', async ({ page, editorPage }) => {
+test('test table full width switch redo and undo', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\n' },
@@ -51,8 +51,8 @@ extendTest('test table full width switch redo and undo', async ({ page, editorPa
   expect(await page.locator('#editor1 .ql-editor .ql-table col[data-full="true"]').count()).toBe(4);
 });
 
-extendTest.describe('test table tools should hide after table removed', () => {
-  extendTest('about TableResizeLine TableMenuContextmenu', async ({ page, editorPage }) => {
+test.describe('test table tools should hide after table removed', () => {
+  test('about TableResizeLine TableMenuContextmenu', async ({ page, editorPage }) => {
     editorPage.index = 0;
     await createTableBySelect(page, 'container1', 3, 3);
     await page.locator('#container1 .ql-editor .ql-table td').nth(0).click();
@@ -78,7 +78,7 @@ extendTest.describe('test table tools should hide after table removed', () => {
     await expect(page.locator('#container1 .table-up-toolbox .table-up-scale')).not.toBeVisible();
   });
 
-  extendTest('about TableResizeBox TableMenuSelect', async ({ page, editorPage }) => {
+  test('about TableResizeBox TableMenuSelect', async ({ page, editorPage }) => {
     editorPage.index = 1;
     await createTableBySelect(page, 'container2', 3, 3);
     await page.locator('#container2 .ql-editor .ql-table td').nth(0).click();
@@ -102,7 +102,7 @@ extendTest.describe('test table tools should hide after table removed', () => {
   });
 });
 
-extendTest('remove list in cell should work correctly', async ({ page, editorPage }) => {
+test('remove list in cell should work correctly', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\n' },
@@ -124,8 +124,8 @@ extendTest('remove list in cell should work correctly', async ({ page, editorPag
   expect(await page.locator('#editor1 .ql-editor .ql-table li').count()).toBe(2);
 });
 
-extendTest.describe('convert table cell', () => {
-  extendTest('convert td to th', async ({ page, editorPage }) => {
+test.describe('convert table cell', () => {
+  test('convert td to th', async ({ page, editorPage }) => {
     editorPage.index = 0;
     await createTableBySelect(page, 'container1', 3, 3);
     await page.locator('#editor1 .ql-editor .ql-table td').nth(0).click();
@@ -135,7 +135,7 @@ extendTest.describe('convert table cell', () => {
     expect(await page.locator('#editor1 .ql-editor .ql-table th').count()).toBe(1);
   });
 
-  extendTest('convert th to td', async ({ page, editorPage }) => {
+  test('convert th to td', async ({ page, editorPage }) => {
     editorPage.index = 0;
     await editorPage.setContents([
       { insert: '\n' },

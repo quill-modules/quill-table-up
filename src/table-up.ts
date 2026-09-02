@@ -412,6 +412,10 @@ export class TableUp {
       DeleteTable: 'Delete table',
       BackgroundColor: 'Set background color',
       BorderColor: 'Set border color',
+      FreezeRow: 'Freeze to this row',
+      UnfreezeRow: 'Unfreeze',
+      FreezeCol: 'Freeze to this column',
+      UnfreezeCol: 'Unfreeze column',
     };
     if (isFunction(options)) {
       const textGetter = options;
@@ -1118,6 +1122,8 @@ export class TableUp {
         colId: newColId,
         width: tableBlot.full ? 6 : 160,
         full: tableBlot.full,
+        freezeRow: tableBlot.freezeRow,
+        freezeCol: tableBlot.freezeCol,
       });
     }
 

@@ -1,5 +1,5 @@
-import { expect, test } from '@playwright/test';
-import { createTableBySelect, extendTest } from './utils';
+import { expect } from '@playwright/test';
+import { createTableBySelect, extendTest as test } from './utils';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('http://127.0.0.1:5500/docs/test.html');
@@ -131,7 +131,7 @@ test('test TableSelection set format header', async ({ page }) => {
   expect(await page.locator('#editor1 .ql-table-cell-inner h1').count()).toBe(4);
 });
 
-extendTest('test TableSelection set multiple format', async ({ page, editorPage }) => {
+test('test TableSelection set multiple format', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\n' },
@@ -199,7 +199,7 @@ test('test TableSelection clean format', async ({ page }) => {
   expect(await cleanEl.count()).toBe(0);
 });
 
-extendTest('test TableSelection set format in part of cell text', async ({ page, editorPage }) => {
+test('test TableSelection set format in part of cell text', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\n' },
@@ -246,7 +246,7 @@ extendTest('test TableSelection set format in part of cell text', async ({ page,
   expect(await page.locator('#editor1 .ql-table-cell-inner em').count()).toBe(2);
 });
 
-extendTest('test TableSelection should update when text change', async ({ page, editorPage }) => {
+test('test TableSelection should update when text change', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await createTableBySelect(page, 'container1', 3, 3);
 
@@ -267,7 +267,7 @@ extendTest('test TableSelection should update when text change', async ({ page, 
   expect(newSelectionWrapper.y - selectionBound.y).toBeCloseTo(lineBound.height, 5);
 });
 
-extendTest('test TableSelection should hide if selectedTds no longer in page', async ({ page, editorPage }) => {
+test('test TableSelection should hide if selectedTds no longer in page', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await createTableBySelect(page, 'container1', 3, 3);
   await page.waitForTimeout(1000);
@@ -299,7 +299,7 @@ extendTest('test TableSelection should hide if selectedTds no longer in page', a
   await expect(page.locator('#container1 .table-up-selection .table-up-selection__line')).not.toBeVisible();
 });
 
-extendTest('test TableSelection should update when table resize', async ({ page, editorPage }) => {
+test('test TableSelection should update when table resize', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await createTableBySelect(page, 'container1', 3, 3);
 
@@ -323,7 +323,7 @@ extendTest('test TableSelection should update when table resize', async ({ page,
   expect(newSelectionBound.width).toBeCloseTo(selectionBound.width + 100, 5);
 });
 
-extendTest('table resize should update TableSelection', async ({ page, editorPage }) => {
+test('table resize should update TableSelection', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await createTableBySelect(page, 'container1', 3, 3);
 
@@ -347,7 +347,7 @@ extendTest('table resize should update TableSelection', async ({ page, editorPag
   expect(newThirdCellSelectionBound).toEqual(newCellBound);
 });
 
-extendTest('selection should be no offset when container have padding', async ({ page, editorPage }) => {
+test('selection should be no offset when container have padding', async ({ page, editorPage }) => {
   editorPage.index = 4;
   await editorPage.setContents([
     { insert: '\n' },
@@ -377,7 +377,7 @@ extendTest('selection should be no offset when container have padding', async ({
   expect(tableBounding.y).toBe(selectionBounding.y);
 });
 
-extendTest('toolbox bounds should same with quill.root', async ({ page, editorPage }) => {
+test('toolbox bounds should same with quill.root', async ({ page, editorPage }) => {
   editorPage.index = 4;
   const toolbox = page.locator('#editor5 .table-up-toolbox').nth(0);
   const quillRoot = page.locator('#editor5 .ql-editor').nth(0);
@@ -408,7 +408,7 @@ extendTest('toolbox bounds should same with quill.root', async ({ page, editorPa
   expect(toolboxBoundingAfter).toEqual(quillRootBoundingAfter);
 });
 
-extendTest('TableSelection should not update when input composition', async ({ page, editorPage }) => {
+test('TableSelection should not update when input composition', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await createTableBySelect(page, 'container1', 3, 3);
 
@@ -425,7 +425,7 @@ extendTest('TableSelection should not update when input composition', async ({ p
   expect(composingBounding).toEqual(bounding);
 });
 
-extendTest('TableSelection should allow text selection when editor is not editable', async ({ page, editorPage }) => {
+test('TableSelection should allow text selection when editor is not editable', async ({ page, editorPage }) => {
   editorPage.index = 0;
   await editorPage.setContents([
     { insert: '\n' },
@@ -473,8 +473,8 @@ extendTest('TableSelection should allow text selection when editor is not editab
   expect(selectedText).toContain('Test');
 });
 
-extendTest.describe('TableSelection should work correct when wrapper scroll', () => {
-  extendTest('TableSelection in quill root scroll', async ({ page, editorPage }) => {
+test.describe('TableSelection should work correct when wrapper scroll', () => {
+  test('TableSelection in quill root scroll', async ({ page, editorPage }) => {
     editorPage.index = 0;
     await editorPage.setContents([
       { insert: '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n' },
@@ -542,7 +542,7 @@ extendTest.describe('TableSelection should work correct when wrapper scroll', ()
     expect(selectedTds.length).toBe(9);
   });
 
-  extendTest('TableSelection in body scroll', async ({ page, editorPage }) => {
+  test('TableSelection in body scroll', async ({ page, editorPage }) => {
     editorPage.index = 4;
     await editorPage.setContents([
       { insert: '\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n' },
@@ -607,5 +607,75 @@ extendTest.describe('TableSelection should work correct when wrapper scroll', ()
       return (window.quills[4].getModule('table-up') as any).getModule('table-selection')!.selectedTds;
     });
     expect(selectedTds.length).toBe(9);
+  });
+
+  test('clicking near the wrapper edge without dragging does not trigger auto-scroll', async ({ page }) => {
+    // regression for the "defer AutoScroller.start until first mousemove" fix:
+    // on the old code, mousedown started the rAF loop, and any click landing
+    // within the `AutoScroller(50, 40)` deadzone (40px of the wrapper's top
+    // or bottom, 50px of its left or right) would auto-scroll for at least
+    // one tick before mouseup could cancel the loop.
+    await page.locator('#container1 .ql-toolbar .ql-table-up > .ql-picker-label').first().click();
+    await page.locator('#container1 .ql-toolbar .ql-table-up .ql-custom-select').getByText('Custom').click();
+    await page.locator('.table-up-input__item').nth(0).locator('input').fill('20');
+    await page.locator('.table-up-input__item').nth(1).locator('input').fill('1');
+    await page.getByRole('button', { name: 'Confirm' }).click();
+    await page.locator('#editor1 .ql-table-wrapper').waitFor({ state: 'visible' });
+
+    // bound the wrapper so it becomes the scrolling container, and give it
+    // enough overflow that scrollTop can meaningfully change
+    await page.evaluate(() => {
+      for (const td of Array.from(document.querySelectorAll('#editor1 .ql-table td, #editor1 .ql-table th'))) {
+        (td as HTMLElement).style.height = '40px';
+      }
+    });
+    await page.evaluate(() => {
+      const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
+      wrapper.style.maxHeight = '200px';
+    });
+
+    // scroll to the middle so both up-scroll and down-scroll deadzones are
+    // meaningful (scrollTop can move in either direction)
+    await page.evaluate(() => {
+      const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
+      wrapper.scrollTop = 200;
+    });
+    await page.waitForTimeout(50);
+
+    const scrollTopBefore = await page.evaluate(() => {
+      const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
+      return wrapper.scrollTop;
+    });
+
+    // find a cell whose center lies inside the top-edge deadzone
+    // (< wrapper.top + 40) so a click there would have auto-scrolled up under
+    // the old code
+    const target = await page.evaluate(() => {
+      const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const cells = Array.from(document.querySelectorAll('#editor1 .ql-table td, #editor1 .ql-table th'));
+      for (const cell of cells) {
+        const rect = cell.getBoundingClientRect();
+        const cy = rect.top + rect.height / 2;
+        if (cy > wrapperRect.top && cy < wrapperRect.top + 40) {
+          return { x: rect.left + rect.width / 2, y: cy };
+        }
+      }
+      return null;
+    });
+    expect(target).not.toBeNull();
+
+    // click (mousedown + mouseup) with a hold in between that's long enough
+    // for the old rAF loop to have ticked several times if it were running
+    await page.mouse.move(target!.x, target!.y);
+    await page.mouse.down();
+    await page.waitForTimeout(150);
+    await page.mouse.up();
+
+    const scrollTopAfter = await page.evaluate(() => {
+      const wrapper = document.querySelector('#editor1 .ql-table-wrapper') as HTMLElement;
+      return wrapper.scrollTop;
+    });
+    expect(scrollTopAfter).toBe(scrollTopBefore);
   });
 });

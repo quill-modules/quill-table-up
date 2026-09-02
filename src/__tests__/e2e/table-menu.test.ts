@@ -1,12 +1,12 @@
-import { expect, test } from '@playwright/test';
-import { createTableBySelect, extendTest } from './utils';
+import { expect } from '@playwright/test';
+import { createTableBySelect, extendTest as test } from './utils';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('http://127.0.0.1:5500/docs/test.html');
   page.locator('.ql-container.ql-snow');
 });
 
-extendTest('test menu color picker should work correctly', async ({ page }) => {
+test('test menu color picker should work correctly', async ({ page }) => {
   await createTableBySelect(page, 'container1', 3, 3);
   const container1Cell = page.locator('#editor1 .ql-table-cell').nth(0);
   const cellBoundbox = (await container1Cell.boundingBox())!;
@@ -46,7 +46,7 @@ extendTest('test menu color picker should work correctly', async ({ page }) => {
   await expect(page.locator('#editor2 .ql-table-cell').nth(0)).toHaveCSS('background-color', 'rgb(255, 255, 255)');
 });
 
-extendTest('test menu color picker should not have two at the same time', async ({ page }) => {
+test('test menu color picker should not have two at the same time', async ({ page }) => {
   await createTableBySelect(page, 'container2', 3, 3);
   await page.locator('#editor2 .ql-table-cell').nth(0).click();
   await page.waitForTimeout(1000);
@@ -64,7 +64,7 @@ extendTest('test menu color picker should not have two at the same time', async 
   await expect(page.locator('.table-up-tooltip .table-up-color-map')).toBeVisible();
 });
 
-extendTest('test TableMenuSelect should update when text change', async ({ page, editorPage }) => {
+test('test TableMenuSelect should update when text change', async ({ page, editorPage }) => {
   editorPage.index = 1;
   await createTableBySelect(page, 'container2', 3, 3);
 
@@ -91,7 +91,7 @@ extendTest('test TableMenuSelect should update when text change', async ({ page,
   expect(newMenuWrapper.y - menuBound.y).toBeCloseTo(lineBound.height, 0);
 });
 
-extendTest('TableMenu color picker should trigger by click', async ({ page }) => {
+test('TableMenu color picker should trigger by click', async ({ page }) => {
   await createTableBySelect(page, 'container1', 3, 3);
   const cell = page.locator('#editor1 .ql-editor .ql-table td').nth(0);
   await cell.click();
@@ -104,7 +104,7 @@ extendTest('TableMenu color picker should trigger by click', async ({ page }) =>
   await expect(page.locator('.table-up-tooltip .table-up-color-map')).toBeVisible();
 });
 
-extendTest('TableMenu color picker display should blur editor', async ({ page }) => {
+test('TableMenu color picker display should blur editor', async ({ page }) => {
   await createTableBySelect(page, 'container1', 3, 3);
   const cell = page.locator('#editor1 .ql-editor .ql-table td').nth(0);
   await cell.click();
@@ -130,7 +130,7 @@ extendTest('TableMenu color picker display should blur editor', async ({ page })
   expect(isFocusedAfterMenuDisplay).toBe(false);
 });
 
-extendTest('test TableSelection should not display when color pick display', async ({ page }) => {
+test('test TableSelection should not display when color pick display', async ({ page }) => {
   await createTableBySelect(page, 'container1', 3, 3);
   const cell = page.locator('#editor1 .ql-editor .ql-table td').nth(0);
   await cell.click();
@@ -158,7 +158,7 @@ extendTest('test TableSelection should not display when color pick display', asy
   await expect(page.locator('#container1 .table-up-toolbox .table-up-selection .table-up-selection__line')).not.toBeVisible();
 });
 
-extendTest('table width switch should work', async ({ page }) => {
+test('table width switch should work', async ({ page }) => {
   await createTableBySelect(page, 'container1', 4, 4);
   const cell = page.locator('#editor1 .ql-editor .ql-table td').nth(0);
   await cell.click();
@@ -172,7 +172,7 @@ extendTest('table width switch should work', async ({ page }) => {
 });
 
 test.describe('contextmenu behavior', () => {
-  extendTest('should show custom menu when cell is selected', async ({ page }) => {
+  test('should show custom menu when cell is selected', async ({ page }) => {
     await createTableBySelect(page, 'container1', 3, 3);
 
     const cell = page.locator('#editor1 .ql-editor .ql-table td').nth(0);
@@ -183,7 +183,7 @@ test.describe('contextmenu behavior', () => {
     await expect(page.locator('.table-up-menu.is-contextmenu')).toBeVisible();
   });
 
-  extendTest('should not show custom menu when right-click on table without selection', async ({ page }) => {
+  test('should not show custom menu when right-click on table without selection', async ({ page }) => {
     await createTableBySelect(page, 'container1', 3, 3);
 
     const cell = page.locator('#editor1 .ql-editor .ql-table td').nth(0);
@@ -197,7 +197,7 @@ test.describe('contextmenu behavior', () => {
     await expect(page.locator('.table-up-menu.is-contextmenu')).not.toBeVisible();
   });
 
-  extendTest('should not show custom menu when right-click outside table', async ({ page }) => {
+  test('should not show custom menu when right-click outside table', async ({ page }) => {
     await createTableBySelect(page, 'container1', 3, 3);
 
     const editorParagraph = page.locator('#editor1 .ql-editor > p').first();

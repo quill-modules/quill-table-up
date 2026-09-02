@@ -1,0 +1,66 @@
+@import './variables.less';
+@import './functions.less';
+
+.ql-editor .ql-table {
+  .setCssVar(table-freeze-bg, #fff);
+  .setCssVar(table-freeze-shadow, rgba(0, 0, 0, 0.35));
+
+  &:has(.is-frozen, .is-frozen-col) {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+}
+
+.ql-table-row.is-frozen {
+  position: sticky;
+  z-index: @freeze-z-row;
+  background-color: .getCssVar(table-freeze-bg) [];
+
+  &:has(+ .ql-table-row.is-frozen) td,
+  &:has(+ .ql-table-row.is-frozen) th {
+    border-bottom: none;
+  }
+  & + .ql-table-row.is-frozen td,
+  & + .ql-table-row.is-frozen th {
+    border-top: 1px solid @table-border-color;
+  }
+}
+
+.ql-table-row.is-frozen-animate {
+  transition: top 0.15s ease;
+}
+
+.ql-table-cell.is-frozen-col {
+  position: sticky;
+  z-index: @freeze-z-col;
+  background-color: .getCssVar(table-freeze-bg) [];
+
+  &:has(+ .ql-table-cell.is-frozen-col) {
+    border-right: none;
+  }
+
+  &:not(:has(+ .ql-table-cell.is-frozen-col)) {
+    overflow: visible;
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: -8px;
+      width: 8px;
+      height: 100%;
+      background: linear-gradient(to right, .getCssVar(table-freeze-shadow) [], transparent);
+      pointer-events: none;
+      z-index: 1;
+    }
+  }
+}
+.ql-table-cell.is-frozen-col + .ql-table-cell.is-frozen-col {
+  border-left: 1px solid @table-border-color;
+}
+
+.ql-table-row.is-frozen .ql-table-cell.is-frozen-col {
+  z-index: @freeze-z-corner;
+  &::after {
+    display: none;
+  }
+}

@@ -1,8 +1,9 @@
-import type TypeScroll from 'quill/blots/scroll';
 import type { TableValue } from '../utils';
 import type { TableBodyFormat } from './table-body-format';
-import { blotName, randomId, tableUpSize } from '../utils';
+import Quill from 'quill';
+import { blotName, randomId, tableUpEvent, tableUpSize } from '../utils';
 import { ContainerFormat } from './container-format';
+import { TableCellFormat } from './table-cell-format';
 import { TableCellInnerFormat } from './table-cell-inner-format';
 import { TableColFormat } from './table-col-format';
 import { TableRowFormat } from './table-row-format';
@@ -28,10 +29,33 @@ export class TableMainFormat extends ContainerFormat {
     return node;
   }
 
-  constructor(public scroll: TypeScroll, domNode: HTMLElement, _value: unknown) {
+  private freezeUpdateTimer: ReturnType<typeof setTimeout> | null = null;
+
+  constructor(public scroll: any, domNode: HTMLElement, _value: unknown) {
     super(scroll, domNode);
     this.updateAlign();
+    this.scroll.emitter.on(Quill.events.TEXT_CHANGE, this.scheduleFreezeUpdate);
+    this.scroll.emitter.on(tableUpEvent.AFTER_TABLE_RESIZE, this.scheduleFreezeUpdate);
   }
+
+  remove() {
+    this.scroll.emitter.off(Quill.events.TEXT_CHANGE, this.scheduleFreezeUpdate);
+    this.scroll.emitter.off(tableUpEvent.AFTER_TABLE_RESIZE, this.scheduleFreezeUpdate);
+    if (this.freezeUpdateTimer) {
+      clearTimeout(this.freezeUpdateTimer);
+      this.freezeUpdateTimer = null;
+    }
+    super.remove();
+  }
+
+  scheduleFreezeUpdate = () => {
+    if (this.freezeUpdateTimer) clearTimeout(this.freezeUpdateTimer);
+    this.freezeUpdateTimer = setTimeout(() => {
+      this.freezeUpdateTimer = null;
+      if (this.freezeRow > 0) this.updateFreezeRows(true);
+      if (this.freezeCol > 0) this.updateFreezeCols();
+    }, 150);
+  };
 
   colWidthFillTable() {
     if (this.full) {
@@ -76,6 +100,82 @@ export class TableMainFormat extends ContainerFormat {
       this.domNode.removeAttribute('data-align');
     }
     this.updateAlign();
+  }
+
+  // All cols carry the same freezeRow value (kept in sync by the setter below), so reading
+  // the first col avoids the O(cols) max-scan without needing a cache.
+  get freezeRow() {
+    const firstCol = this.domNode.querySelector('colgroup > col') as HTMLElement | null;
+    return firstCol ? (Number(firstCol.dataset.freezeRow) || 0) : 0;
+  }
+
+  set freezeRow(value: number) {
+    const cols = this.getCols();
+    for (const col of cols) {
+      col.freezeRow = value;
+    }
+    this.updateFreezeRows();
+  }
+
+  updateFreezeRows(animate: boolean = false) {
+    const rows = this.getRows();
+    const freezeRow = this.freezeRow;
+    let top = 0;
+    for (const [i, row] of rows.entries()) {
+      const node = row.domNode;
+      if (i < freezeRow) {
+        node.classList.add('is-frozen');
+        node.classList.toggle('is-frozen-animate', animate);
+        node.style.top = `${top}px`;
+        top += node.getBoundingClientRect().height;
+      }
+      else {
+        node.classList.remove('is-frozen', 'is-frozen-animate');
+        node.style.top = '';
+      }
+    }
+  }
+
+  get freezeCol() {
+    const firstCol = this.domNode.querySelector('colgroup > col') as HTMLElement | null;
+    return firstCol ? (Number(firstCol.dataset.freezeCol) || 0) : 0;
+  }
+
+  set freezeCol(value: number) {
+    const cols = this.getCols();
+    for (const col of cols) {
+      col.freezeCol = value;
+    }
+    this.updateFreezeCols();
+  }
+
+  updateFreezeCols() {
+    const cols = this.getCols();
+    const freezeCol = this.freezeCol;
+    const colLefts = new Map<string, number>();
+    // `full` tables store `TableColFormat.width` as a percentage, not a pixel
+    // value, so it must be scaled by the table's actual rendered width before
+    // accumulating cascading offsets. Measure once per call to keep this cheap.
+    const tableWidth = this.full ? this.domNode.getBoundingClientRect().width : 0;
+    let left = 0;
+    for (const [i, col] of cols.entries()) {
+      if (i < freezeCol) {
+        colLefts.set(col.colId, left);
+        left += this.full ? (col.width / 100 * tableWidth) : col.width;
+      }
+    }
+    for (const cell of this.descendants(TableCellFormat)) {
+      const node = cell.domNode;
+      const cellLeft = colLefts.get(cell.colId);
+      if (cellLeft !== undefined) {
+        node.classList.add('is-frozen-col');
+        node.style.left = `${cellLeft}px`;
+      }
+      else {
+        node.classList.remove('is-frozen-col');
+        node.style.left = '';
+      }
+    }
   }
 
   setFull() {

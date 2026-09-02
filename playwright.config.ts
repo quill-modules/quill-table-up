@@ -7,6 +7,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 3 : 0,
   reporter: 'html',
+  globalSetup: './playwright.global-setup.ts',
+  globalTeardown: './playwright.global-teardown.ts',
   use: {
     trace: 'on-first-retry',
     launchOptions: {

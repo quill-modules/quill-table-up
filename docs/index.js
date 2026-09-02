@@ -65,6 +65,10 @@ const lastTableUpTexts = {
     ToggleTdBetweenTh: 'Toggle td between th',
     ConvertTothead: 'Convert to thead',
     ConvertTotfoot: 'Convert to tfoot',
+    FreezeRow: 'Freeze to this row',
+    UnfreezeRow: 'Unfreeze Row',
+    FreezeCol: 'Freeze to this column',
+    UnfreezeCol: 'Unfreeze column',
   },
   zh: {
     fullCheckboxText: '插入满宽表格',
@@ -96,6 +100,10 @@ const lastTableUpTexts = {
     ToggleTdBetweenTh: '切换表头单元格',
     ConvertTothead: '转换为表头',
     ConvertTotfoot: '转换为表尾',
+    FreezeRow: '冻结至此行',
+    UnfreezeRow: '取消冻结行',
+    FreezeCol: '冻结至此列',
+    UnfreezeCol: '取消冻结列',
   },
 };
 let lastTableUpLocale = 'en';
@@ -160,6 +168,11 @@ const quillOptions = [
                 tableMenuTools.ToggleTdBetweenTh,
                 tableMenuTools.ConvertTothead,
                 tableMenuTools.ConvertTotfoot,
+                tableMenuTools.Break,
+                tableMenuTools.FreezeCol,
+                tableMenuTools.UnfreezeCol,
+                tableMenuTools.FreezeRow,
+                tableMenuTools.UnfreezeRow,
               ],
               defaultColorMap: [
                 [
