@@ -314,7 +314,7 @@ const tableMenuTools: Record<string, Tool> = {
   UnfreezeRow: {
     name: 'UnfreezeRow',
     icon: UnfreezeRow,
-    tip: 'Unfreeze',
+    tip: 'Unfreeze row',
     handle: (tableModule) => {},
   },
   FreezeCol: {
@@ -415,15 +415,9 @@ For "Freeze to this row" to visually stick while scrolling, `.ql-table-wrapper` 
 }
 ```
 
-Without this, `.ql-table-wrapper`'s own `overflow: auto` (used for horizontal scrolling of wide tables) still becomes the sticky containing block for frozen rows, but since it has no bounded height it never scrolls vertically itself — so frozen rows won't stick when the surrounding page/editor scrolls instead.
+Without this, `.ql-table-wrapper`'s own `overflow: auto` (used for horizontal scrolling of wide tables) still becomes the sticky containing block for frozen rows, but since it has no bounded height it never scrolls vertically itself — so frozen rows won't stick when the surrounding page/editor scrolls instead. Horizontally, `.ql-table-wrapper` already has `overflow: auto` by default, so "Freeze to this column" works out of the box as long as the table is actually wider than its wrapper.
 
-**Known limitation**: the combined height of the frozen rows should not exceed `.ql-table-wrapper`'s visible height. If it does, scrolling to the very bottom will cause the frozen rows to visually overlap each other — this is standard `position: sticky` behavior when multiple stacked sticky elements' combined height exceeds the scrollable viewport, not a bug specific to this plugin, and there is no known CSS-only workaround (a bottom spacer only helps for intermediate scroll positions — scrolling all the way to the bottom still triggers it, regardless of spacer size).
-
-The same requirement applies horizontally for "Freeze to this column": `.ql-table-wrapper` already has `overflow: auto` by default (for horizontal scrolling of wide tables), so frozen columns work out of the box as long as the table is actually wider than its wrapper.
-
-**Known limitation**: the combined width of the frozen columns should not exceed `.ql-table-wrapper`'s visible width — the same class of limitation as frozen rows, mirrored horizontally (standard `position: sticky` behavior when multiple stacked sticky elements' combined size exceeds the scrollable viewport).
-
-Local-selection copy/paste (copying a few cells rather than the whole table) does not currently preserve frozen row/column state — `isFrozenRow`/`isFrozenCol` are computed at render time from the table's `freezeRow`/`freezeCol`, not persisted per cell.
+**Known limitation**: the combined size of the frozen rows/columns should not exceed `.ql-table-wrapper`'s visible height/width. If it does, scrolling to the very edge will cause the frozen rows or columns to visually overlap each other — this is standard `position: sticky` behavior when multiple stacked sticky elements' combined size exceeds the scrollable viewport, not a bug specific to this plugin.
 
 ## Migrate to 3.x
 
