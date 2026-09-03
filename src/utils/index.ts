@@ -4,6 +4,7 @@ export * from './color';
 export * from './components';
 export * from './constants';
 export * from './drag-helper';
+export * from './export-helper';
 export * from './is';
 export * from './position';
 export * from './resize-observer-helper';

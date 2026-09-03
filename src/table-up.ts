@@ -9,7 +9,7 @@ import type { Constructor, QuillTheme, QuillThemePicker, TableBodyTag, TableCell
 import Quill from 'quill';
 import { BlockEmbedOverride, BlockOverride, ContainerFormat, ScrollOverride, TableBodyFormat, TableCaptionFormat, TableCellFormat, TableCellInnerFormat, TableColFormat, TableColgroupFormat, TableFootFormat, TableHeadFormat, TableMainFormat, TableRowFormat, TableWrapperFormat } from './formats';
 import { TableClipboard } from './modules';
-import { blotName, createBEM, createSelectBox, cssTextToObject, debounce, findParentBlot, findParentBlots, getScrollBarWidth, isForbidInTable, isFunction, isNumber, isString, isSubclassOf, isUndefined, limitDomInViewPort, mixinClass, objectToCssText, randomId, tableCantInsert, tableUpEvent, tableUpInternal, tableUpSize, toCamelCase } from './utils';
+import { blotName, createBEM, createSelectBox, cssTextToObject, debounce, findParentBlot, findParentBlots, getScrollBarWidth, getTableWithInlineStyles, isForbidInTable, isFunction, isNumber, isString, isSubclassOf, isUndefined, limitDomInViewPort, mixinClass, objectToCssText, randomId, tableCantInsert, tableUpEvent, tableUpInternal, tableUpSize, toCamelCase } from './utils';
 
 const Parchment = Quill.import('parchment');
 const Delta = Quill.import('delta');
@@ -1468,5 +1468,48 @@ export class TableUp {
     }
     newBody.convertBody(tag);
     firstBody.remove();
+  }
+
+  /**
+   * Export table HTML with all computed styles converted to inline CSS.
+   * Useful for WYSIWYG export to third-party tools (HTML→PDF converters, etc.)
+   * that don't load external stylesheets.
+   *
+   * @param tableId - Optional: export only the table with this ID. If not provided, exports all tables.
+   * @returns HTML string with inline styles, or array of HTML strings if multiple tables
+   *
+   * @example
+   * // Export a specific table by ID
+   * const html = tableModule.exportTableHtmlWithInlineStyles('table-123');
+   * console.log(html); // HTML with all .ql-table-cell padding now inline
+   *
+   * @example
+   * // Export all tables in the editor
+   * const htmls = tableModule.exportTableHtmlWithInlineStyles();
+   * htmls.forEach(html => sendToPdfConverter(html));
+   */
+  exportTableHtmlWithInlineStyles(tableId?: string): string | string[] {
+    const tables = this.quill.root.querySelectorAll('.ql-table-wrapper table, table.ql-table');
+
+    if (tableId) {
+      // Find and export specific table by ID
+      for (const table of Array.from(tables)) {
+        if ((table as HTMLElement).dataset.tableId === tableId) {
+          const inlined = getTableWithInlineStyles(table as HTMLElement);
+          return inlined.outerHTML;
+        }
+      }
+      console.warn(`Table with ID "${tableId}" not found`);
+      return '';
+    }
+
+    // Export all tables
+    const results: string[] = [];
+    for (const table of Array.from(tables)) {
+      const inlined = getTableWithInlineStyles(table as HTMLElement);
+      results.push(inlined.outerHTML);
+    }
+
+    return results;
   }
 }
