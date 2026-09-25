@@ -1,6 +1,8 @@
+import type { ToolOption } from '../../utils';
 import Quill from 'quill';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TableCellInnerFormat, TableMainFormat } from '../../formats';
+import { tableMenuTools } from '../../modules';
 import { TableUp } from '../../table-up';
 import { createQuillWithTableModule, createTable, createTableDeltaOps, createTaleColHTML, expectDelta } from './utils';
 
@@ -428,6 +430,41 @@ describe('merge and split cell', () => {
         { insert: '\n' },
       ]),
     );
+  });
+});
+
+describe('MergeCell / SplitCell menu show', () => {
+  it('MergeCell.show is true only when more than one cell is selected', async () => {
+    const quill = await createTable(2, 2, { full: false });
+    const tableModule = quill.getModule(TableUp.moduleName) as TableUp;
+    const table = quill.root.querySelector('table')!;
+    const tableMainBlot = Quill.find(table) as TableMainFormat;
+    const cells = tableMainBlot.descendants(TableCellInnerFormat) as TableCellInnerFormat[];
+    const show = (tableMenuTools.MergeCell as ToolOption).show!;
+
+    expect(show.call({} as any, tableModule, [cells[0]], tableMainBlot)).toBe(false);
+    expect(show.call({} as any, tableModule, cells.slice(0, 2), tableMainBlot)).toBe(true);
+  });
+
+  it('SplitCell.show is true only when exactly one selected cell has rowspan or colspan > 1', async () => {
+    const quill = await createTable(2, 2, { full: false });
+    const tableModule = quill.getModule(TableUp.moduleName) as TableUp;
+    const table = quill.root.querySelector('table')!;
+    const tableMainBlot = Quill.find(table) as TableMainFormat;
+    let cells = tableMainBlot.descendants(TableCellInnerFormat) as TableCellInnerFormat[];
+    const show = (tableMenuTools.SplitCell as ToolOption).show!;
+
+    // unmerged single cell -> hide
+    expect(show.call({} as any, tableModule, [cells[0]], tableMainBlot)).toBe(false);
+    // more than one cell selected -> hide
+    expect(show.call({} as any, tableModule, cells.slice(0, 2), tableMainBlot)).toBe(false);
+
+    // merge two cells then select the merged one -> show
+    tableModule.mergeCells(cells.slice(0, 2));
+    await vi.runAllTimersAsync();
+    cells = tableMainBlot.descendants(TableCellInnerFormat) as TableCellInnerFormat[];
+    const merged = cells.find(c => c.colspan > 1 || c.rowspan > 1)!;
+    expect(show.call({} as any, tableModule, [merged], tableMainBlot)).toBe(true);
   });
 });
 

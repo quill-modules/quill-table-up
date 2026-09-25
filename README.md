@@ -199,7 +199,7 @@ The table operate menu
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------------------- |
 | tipText         | when `tableMenuClass` set `TableUp.TableMenuSelect`, display tip text when hover icon. when `tableMenuClass` set `TableUp.TableMenuContextmenu`, display tip text after icon | `boolean`    | `true`                  |
 | localstorageKey | used color save localstorage key                                                                                                                                             | `string`     | `__table-bg-used-color` |
-| tools           | menu items                                                                                                                                                                   | `Tool[]`     | `defaultTools`          |
+| tools           | menu items                                                                                                                                                                   | `Tool[]`     | see below               |
 | defaultColorMap | color map                                                                                                                                                                    | `string[][]` | in source code          |
 
 <details>
@@ -213,175 +213,19 @@ interface ToolOption {
   isColorChoose?: boolean; // trigger a color picker first. need set `key`
   key?: string; // the style name to set on td.
   handle: (this: TableMenu, tableModule: TableUp, selectedTds: TableCellInnerFormat[], e: Event | string) => void;
+  show?: (this: TableMenu, tableModule: TableUp, selectedTds: TableCellInnerFormat[], tableMainBlot: TableMainFormat) => boolean;
 }
 interface ToolOptionBreak {
   name: 'break';
 }
 type Tool = ToolOption | ToolOptionBreak;
-
-const tableMenuTools: Record<string, Tool> = {
-  Break: {
-    name: 'break',
-  },
-  CopyCell: {
-    name: 'CopyCell',
-    tip: 'Copy cell',
-    icon: Copy,
-    handle: (tableModule, selectedTds) => {},
-  },
-  CutCell: {
-    name: 'CutCell',
-    tip: 'Cut cell',
-    icon: Cut,
-    handle: (tableModule, selectedTds) => {},
-  },
-  InsertTop: {
-    name: 'InsertTop',
-    icon: InsertTop,
-    tip: 'Insert row above',
-    handle: (tableModule, selectedTds) => {},
-  },
-  InsertRight: {
-    name: 'InsertRight',
-    icon: InsertRight,
-    tip: 'Insert column right',
-    handle: (tableModule, selectedTds) => {},
-  },
-  InsertBottom: {
-    name: 'InsertBottom',
-    icon: InsertBottom,
-    tip: 'Insert row below',
-    handle: (tableModule, selectedTds) => {},
-  },
-  InsertLeft: {
-    name: 'InsertLeft',
-    icon: InsertLeft,
-    tip: 'Insert column Left',
-    handle: (tableModule, selectedTds) => {},
-  },
-  MergeCell: {
-    name: 'MergeCell',
-    icon: MergeCell,
-    tip: 'Merge Cell',
-    handle: (tableModule, selectedTds) => {},
-  },
-  SplitCell: {
-    name: 'SplitCell',
-    icon: SplitCell,
-    tip: 'Split Cell',
-    handle: (tableModule, selectedTds) => {},
-  },
-  DeleteRow: {
-    name: 'DeleteRow',
-    icon: RemoveRow,
-    tip: 'Delete Row',
-    handle: (tableModule, selectedTds) => {},
-  },
-  DeleteColumn: {
-    name: 'DeleteColumn',
-    icon: RemoveColumn,
-    tip: 'Delete Column',
-    handle: (tableModule, selectedTds) => {},
-  },
-  DeleteTable: {
-    name: 'DeleteTable',
-    icon: RemoveTable,
-    tip: 'Delete table',
-    handle: (tableModule, selectedTds) => {},
-  },
-  BackgroundColor: {
-    name: 'BackgroundColor',
-    icon: Background,
-    isColorChoose: true,
-    tip: 'Set background color',
-    key: 'background-color',
-    handle: (tableModule, selectedTds, color) => {},
-  },
-  BorderColor: {
-    name: 'BorderColor',
-    icon: Border,
-    isColorChoose: true,
-    tip: 'Set border color',
-    key: 'border-color',
-    handle: (tableModule, selectedTds, color) => {},
-  },
-  FreezeRow: {
-    name: 'FreezeRow',
-    icon: FreezeRow,
-    tip: 'Freeze to this row',
-    handle: (tableModule, selectedTds) => {},
-  },
-  UnfreezeRow: {
-    name: 'UnfreezeRow',
-    icon: UnfreezeRow,
-    tip: 'Unfreeze row',
-    handle: (tableModule) => {},
-  },
-  FreezeCol: {
-    name: 'FreezeCol',
-    icon: FreezeColumn,
-    tip: 'Freeze to this column',
-    handle: (tableModule, selectedTds) => {},
-  },
-  UnfreezeCol: {
-    name: 'UnfreezeCol',
-    icon: UnfreezeColumn,
-    tip: 'Unfreeze column',
-    handle: (tableModule) => {},
-  },
-  SwitchWidth: {
-    name: 'SwitchWidth',
-    icon: AutoFull,
-    tip: 'Switch table width',
-    handle: (tableModule) => {},
-  },
-  InsertCaption: {
-    name: 'InsertCaption',
-    icon: TableHead,
-    tip: 'Insert table caption',
-    handle: (tableModule) => {},
-  },
-  ToggleTdBetweenTh: {
-    name: 'ToggleTdBetweenTh',
-    icon: ConvertCell,
-    tip: 'Toggle td between th',
-    handle: (tableModule, selectedTds) => {},
-  },
-  ConvertTothead: {
-    name: 'ConvertTothead',
-    icon: ConvertCell,
-    tip: 'Convert to thead',
-    handle: (tableModule, selectedTds) => {},
-  },
-  ConvertTotfoot: {
-    name: 'ConvertTotfoot',
-    icon: ConvertCell,
-    tip: 'Convert to tfoot',
-    handle: (tableModule, selectedTds) => {},
-  },
-};
-const defaultTools = [
-  tableMenuTools.InsertTop,
-  tableMenuTools.InsertRight,
-  tableMenuTools.InsertBottom,
-  tableMenuTools.InsertLeft,
-  tableMenuTools.Break,
-  tableMenuTools.MergeCell,
-  tableMenuTools.SplitCell,
-  tableMenuTools.Break,
-  tableMenuTools.DeleteRow,
-  tableMenuTools.DeleteColumn,
-  tableMenuTools.DeleteTable,
-  tableMenuTools.Break,
-  tableMenuTools.BackgroundColor,
-  tableMenuTools.BorderColor,
-  tableMenuTools.Break,
-  tableMenuTools.FreezeRow,
-  tableMenuTools.UnfreezeRow,
-  tableMenuTools.FreezeCol,
-  tableMenuTools.UnfreezeCol,
-];
 ```
+
+Built-in tools are exported as `tableMenuTools` (see [source](https://github.com/quill-modules/quill-table-up/blob/master/src/modules/table-menu/constants.ts)). Available names:
+
+`Break` · `CopyCell` · `CutCell` · `InsertTop` · `InsertRight` · `InsertBottom` · `InsertLeft` · `MergeCell` · `SplitCell` · `DeleteRow` · `DeleteColumn` · `DeleteTable` · `BackgroundColor` · `BorderColor` · `SwitchWidth` · `InsertCaption` · `ToggleTdBetweenTh` · `ConvertTothead` · `ConvertTotfoot` · `FreezeRow` · `UnfreezeRow` · `FreezeCol` · `UnfreezeCol`
+
+Default `tools` order: `InsertTop`, `InsertRight`, `InsertBottom`, `InsertLeft`, `Break`, `MergeCell`, `SplitCell`, `Break`, `DeleteRow`, `DeleteColumn`, `DeleteTable`, `Break`, `BackgroundColor`, `BorderColor`, `Break`, `FreezeRow`, `UnfreezeRow`, `FreezeCol`, `UnfreezeCol`.
 
 </details>
 

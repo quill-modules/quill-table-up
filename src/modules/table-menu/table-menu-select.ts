@@ -70,6 +70,7 @@ export class TableMenuSelect extends TableMenuCommon {
     }
     this.isMenuDisplay = true;
     this.menu.classList.remove(this.bem.is('hidden'));
+    this.refreshVisibility();
 
     const tableSelection = this.tableModule.getModule<TableSelection>(tableUpInternal.tableSelectionName);
     if (tableSelection?.isDisplaySelection) {

@@ -1,7 +1,7 @@
 import type Quill from 'quill';
 import type BaseTheme from 'quill/themes/base';
 import type Picker from 'quill/ui/picker';
-import type { TableCellInnerFormat } from '../formats';
+import type { TableCellInnerFormat, TableMainFormat } from '../formats';
 import type { MenuTooltipInstance, TableMenuCommon } from '../modules';
 import type { TableUp } from '../table-up';
 import type { blotName, tableUpEvent, tableUpInternal, tableUpSize } from './constants';
@@ -17,6 +17,7 @@ export interface ToolOption {
   isColorChoose?: boolean;
   key?: string;
   handle: (this: TableMenuCommon, tableModule: TableUp, selectedTds: TableCellInnerFormat[], e: Event | string | null) => void;
+  show?: (this: TableMenuCommon, tableModule: TableUp, selectedTds: TableCellInnerFormat[], tableMainBlot: TableMainFormat) => boolean;
 }
 export interface ToolOptionBreak {
   name: 'break';

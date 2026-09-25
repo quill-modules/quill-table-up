@@ -232,3 +232,20 @@ describe('test tableCaption', () => {
     expect(doc.body.querySelector('caption .ql-ui')).toBeNull();
   });
 });
+
+describe('InsertCaption menu show', () => {
+  it('is true when the table has no caption and false after a caption is inserted', async () => {
+    const quill = await createTable(2, 2, { full: false });
+    const tableModule = quill.getModule(TableUp.moduleName) as TableUp;
+    const table = quill.root.querySelector('table')!;
+    const tableMainBlot = Quill.find(table) as any;
+    const show = (tableMenuTools.InsertCaption as ToolOption).show!;
+
+    expect(show.call({} as any, tableModule, [], tableMainBlot)).toBe(true);
+
+    (tableMenuTools.InsertCaption as ToolOption).handle.call({ quill, table } as any, tableModule, [], null);
+    await vi.runAllTimersAsync();
+
+    expect(show.call({} as any, tableModule, [], tableMainBlot)).toBe(false);
+  });
+});

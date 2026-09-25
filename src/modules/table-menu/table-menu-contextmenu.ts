@@ -40,6 +40,7 @@ export class TableMenuContextmenu extends TableMenuCommon {
       }
       // manual call menu show
       this.isMenuDisplay = true;
+      this.refreshVisibility();
       this.update({ x: e.clientX, y: e.clientY });
       const tempHide = () => {
         this.hide();

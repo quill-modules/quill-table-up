@@ -1,5 +1,6 @@
+import type { TableMainFormat } from '../../formats';
 import type { TableUp } from '../../table-up';
-import type { TableMenuOptions, ToolOption, TooltipInstance, ToolTipOptions } from '../../utils';
+import type { TableMenuOptions, Tool, ToolOption, TooltipInstance, ToolTipOptions } from '../../utils';
 import type { TableSelection } from '../table-selection';
 import Quill from 'quill';
 import { createBEM, createColorPicker, createTooltip, debounce, defaultColorMap, isArray, isFunction, randomId, tableUpEvent, tableUpInternal } from '../../utils';
@@ -19,6 +20,7 @@ export class TableMenuCommon extends TableDomSelector {
   isMenuDisplay: boolean = false;
   isColorPicking: boolean = false;
   tooltipItem: MenuTooltipInstance[] = [];
+  toolItems: { dom: HTMLElement; tool: Tool }[] = [];
   activeTooltip: MenuTooltipInstance | null = null;
   bem = createBEM('menu');
   colorItemClass = `color-${randomId()}`;
@@ -116,6 +118,7 @@ export class TableMenuCommon extends TableDomSelector {
     const toolBox = document.createElement('div');
     toolBox.classList.add(this.bem.b());
     Object.assign(toolBox.style, { display: 'flex' });
+    this.toolItems = [];
     for (const tool of this.options.tools) {
       const { name, icon, handle, isColorChoose, key: attrKey, tip = '' } = tool as ToolOption;
       const item = document.createElement('span');
@@ -154,8 +157,48 @@ export class TableMenuCommon extends TableDomSelector {
         }
       }
       toolBox.appendChild(item);
+      this.toolItems.push({ dom: item, tool });
     }
     return toolBox;
+  }
+
+  refreshVisibility() {
+    if (!this.menu || !this.table || this.toolItems.length === 0) return;
+    const tableMainBlot = Quill.find(this.table) as TableMainFormat | null;
+    if (!tableMainBlot) return;
+    const selectedTds = this.getSelectedTds();
+
+    const visibility = this.toolItems.map(({ tool }) => {
+      if (tool.name === 'break') return true;
+      const { show } = tool as ToolOption;
+      return show ? show.call(this, this.tableModule, selectedTds, tableMainBlot) : true;
+    });
+
+    // collapse breaks: hide leading, trailing, and consecutive breaks
+    let hasContentSinceBreak = false;
+    let lastVisibleBreak = -1;
+    for (let i = 0; i < this.toolItems.length; i++) {
+      if (!visibility[i]) continue;
+      if (this.toolItems[i].tool.name === 'break') {
+        if (!hasContentSinceBreak) {
+          visibility[i] = false;
+        }
+        else {
+          lastVisibleBreak = i;
+          hasContentSinceBreak = false;
+        }
+      }
+      else {
+        hasContentSinceBreak = true;
+      }
+    }
+    if (lastVisibleBreak !== -1 && !hasContentSinceBreak) {
+      visibility[lastVisibleBreak] = false;
+    }
+
+    for (let i = 0; i < this.toolItems.length; i++) {
+      this.toolItems[i].dom.style.display = visibility[i] ? '' : 'none';
+    }
   }
 
   createColorChoose(item: HTMLElement, { handle, key }: ToolOption) {

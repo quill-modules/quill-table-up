@@ -60,6 +60,26 @@ describe('table freeze row aggregate', () => {
   });
 });
 
+describe('table freeze row menu show', () => {
+  it('FreezeRow.show is true only when the table has no frozen rows; UnfreezeRow.show is the inverse', async () => {
+    const quill = await createTable(3, 2, { full: false });
+    const table = quill.root.querySelector('table')!;
+    const tableMainBlot = Quill.find(table) as any;
+    const cellInners = tableMainBlot.descendants(TableCellInnerFormat) as TableCellInnerFormat[];
+    const cell = cellInners[0];
+    const tableModule = quill.getModule(TableUp.moduleName) as TableUp;
+    const freezeShow = (tableMenuTools.FreezeRow as ToolOption).show!;
+    const unfreezeShow = (tableMenuTools.UnfreezeRow as ToolOption).show!;
+
+    expect(freezeShow.call({} as any, tableModule, [cell], tableMainBlot)).toBe(true);
+    expect(unfreezeShow.call({} as any, tableModule, [cell], tableMainBlot)).toBe(false);
+
+    tableMainBlot.freezeRow = 2;
+    expect(freezeShow.call({} as any, tableModule, [cell], tableMainBlot)).toBe(false);
+    expect(unfreezeShow.call({} as any, tableModule, [cell], tableMainBlot)).toBe(true);
+  });
+});
+
 describe('table freeze row menu tools', () => {
   it('FreezeRow tool freezes rows 0..x based on the selected cells max row index', async () => {
     const quill = await createTable(4, 2, { full: false });
@@ -194,6 +214,26 @@ describe('table freeze isFrozenRow/isFrozenCol getters', () => {
     expect(neither.isFrozenRow).toBe(false);
     expect(neither.isFrozenCol).toBe(false);
     void tableModule;
+  });
+});
+
+describe('table freeze col menu show', () => {
+  it('FreezeCol.show is true only when the table has no frozen columns; UnfreezeCol.show is the inverse', async () => {
+    const quill = await createTable(2, 3, { full: false });
+    const table = quill.root.querySelector('table')!;
+    const tableMainBlot = Quill.find(table) as any;
+    const cellInners = tableMainBlot.descendants(TableCellInnerFormat) as TableCellInnerFormat[];
+    const cell = cellInners[0];
+    const tableModule = quill.getModule(TableUp.moduleName) as TableUp;
+    const freezeShow = (tableMenuTools.FreezeCol as ToolOption).show!;
+    const unfreezeShow = (tableMenuTools.UnfreezeCol as ToolOption).show!;
+
+    expect(freezeShow.call({} as any, tableModule, [cell], tableMainBlot)).toBe(true);
+    expect(unfreezeShow.call({} as any, tableModule, [cell], tableMainBlot)).toBe(false);
+
+    tableMainBlot.freezeCol = 2;
+    expect(freezeShow.call({} as any, tableModule, [cell], tableMainBlot)).toBe(false);
+    expect(unfreezeShow.call({} as any, tableModule, [cell], tableMainBlot)).toBe(true);
   });
 });
 
