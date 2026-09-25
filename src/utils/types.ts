@@ -43,6 +43,7 @@ export interface TableResizeBoxOptions {
 }
 export interface TableCreatorTextOptions {
   fullCheckboxText: string;
+  headerCheckboxText: string;
   customBtnText: string;
   confirmText: string;
   cancelText: string;
@@ -70,6 +71,8 @@ export interface TableUpOptions {
   customSelect?: (tableModule: TableUp, picker: QuillThemePicker) => Promise<HTMLElement> | HTMLElement;
   full: boolean;
   fullSwitch: boolean;
+  withHeader: boolean;
+  withHeaderSwitch: boolean;
   customBtn: boolean;
   texts: TableTextOptions;
   icon: string;
